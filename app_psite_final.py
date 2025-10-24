@@ -1,6 +1,6 @@
 import os
+import glob
 import json
-import random
 from typing import List
 import pandas as pd
 import streamlit as st
@@ -25,44 +25,131 @@ st.markdown(
 
 REQUIRED_COLS = ["id","subject","stem","A","B","C","D","E","correct","explanation"]
 
-# Shortened list of representative PSITE subjects for brevity; can be expanded as needed
-SUBJECT_OPTIONS = [
-    "Bronchoscopy",
-    "Congenital Diaphragmatic Hernia",
-    "Hirschsprung Disease",
-    "Malrotation",
-    "Appendicitis",
-    "Intussusception",
-    "Necrotizing Enterocolitis",
-    "Gastroschisis",
-    "Omphalocele",
-    "Wilms Tumor, Renal Cell Carcinoma, and Hemihypertrophy",
-    "Neuroblastoma",
-    "Rhabdomyosarcoma",
-    "Biliary Atresia",
-    "Esophageal Atresia and Tracheoesophageal Fistula",
-    "Anorectal Malformation",
-    "Undescended Testicle (Cryptorchidism)",
-    "Inguinal Hernia",
-    "Thoracic Trauma",
-    "Short Bowel Syndrome/Intestinal Failure",
-    "Fluids and Electrolytes",
-    "Extracorporeal Life Support",
-]
+# ========= Dynamic topic discovery =========
+# Put your per-topic CSVs in this folder. If you prefer repo root, set CSV_FOLDER = "."
+CSV_FOLDER = "data"  # change to "." if your CSVs are alongside app.py
 
-def load_fixed_csv() -> pd.DataFrame:
-    path = os.environ.get("QBANK_CSV_PATH","questions.csv")
-    try:
-        return pd.read_csv(path)
-    except Exception:
-        RAW_URL = st.secrets.get("CSV_URL", os.environ.get("CSV_URL",""))
-        if RAW_URL:
+def _pretty_name_from_filename(path: str) -> str:
+    name = os.path.basename(path)
+    if name.lower().endswith(".csv"):
+        name = name[:-4]
+    # convert underscores/dashes to spaces, title-case the result
+    return name.replace("_", " ").replace("-", " ").strip().title()
+
+def discover_topic_csvs(folder: str) -> dict:
+    """
+    Returns a mapping { 'Pretty Subject Name': '/path/to/file.csv' }
+    Ignores a generic 'questions.csv' so the list is truly topic CSVs.
+    """
+    pattern = os.path.join(folder, "*.csv")
+    files = glob.glob(pattern)
+    mapping = {}
+    for f in files:
+        base = os.path.basename(f).lower()
+        if base == "questions.csv":
+            # keep a generic combined file available as a fallback but don't show it as a "topic"
+            continue
+        pretty = _pretty_name_from_filename(f)
+        mapping[pretty] = f
+    return dict(sorted(mapping.items(), key=lambda x: x[0].lower()))
+
+TOPIC_TO_CSV = discover_topic_csvs(CSV_FOLDER)
+SUBJECT_OPTIONS = list(TOPIC_TO_CSV.keys())
+
+# ========= Safe, topic-aware loader =========
+def _read_csv_strict(path: str) -> pd.DataFrame:
+    """Read a CSV and validate required columns."""
+    df = pd.read_csv(path)
+    missing = [c for c in REQUIRED_COLS if c not in df.columns]
+    if missing:
+        raise ValueError(f"{path} is missing columns: {missing}")
+    df = df[REQUIRED_COLS].copy()
+    df["id"] = df["id"].astype(str).str.strip()
+    df["subject"] = df["subject"].astype(str).str.strip()
+    return df
+
+def load_questions_for_subjects(selected_subjects) -> pd.DataFrame:
+    """
+    Load questions only from CSVs corresponding to the selected subjects.
+    - Skips any file that is missing or malformed (notes shown in sidebar).
+    - If nothing loads but a fallback 'questions.csv' exists at CSV_FOLDER or repo root, uses it.
+    - If still nothing, stops with a friendly error.
+    """
+    frames = []
+    notes = []
+
+    # Load per-topic files
+    if selected_subjects:
+        for subj in selected_subjects:
+            csv_path = TOPIC_TO_CSV.get(subj)
+            if not csv_path:
+                notes.append(f"• No CSV mapped for subject: {subj} (skipped)")
+                continue
+            if not os.path.exists(csv_path):
+                notes.append(f"• CSV not found for {subj}: {csv_path} (skipped)")
+                continue
             try:
-                return pd.read_csv(RAW_URL)
-            except Exception:
-                pass
-        return pd.DataFrame()
+                df = _read_csv_strict(csv_path)
+            except Exception as e:
+                notes.append(f"• Problem reading {csv_path}: {e} (skipped)")
+                continue
 
+            # Keep only rows that match the intended subject (in case of mix-ups)
+            bad = df["subject"] != subj
+            if bad.any():
+                kept = df[~bad].copy()
+                removed = int(bad.sum())
+                if removed:
+                    notes.append(f"• {os.path.basename(csv_path)}: removed {removed} row(s) with mismatched subject.")
+                df = kept
+
+            frames.append(df)
+
+    # Fallback: a generic combined file named 'questions.csv' in CSV_FOLDER or repo root
+    def try_fallback() -> pd.DataFrame | None:
+        cands = [
+            os.path.join(CSV_FOLDER, "questions.csv"),
+            "questions.csv",
+        ]
+        for p in cands:
+            if os.path.exists(p):
+                try:
+                    fb = _read_csv_strict(p)
+                    notes.append(f"• Loaded fallback '{p}' because no subject CSVs were usable.")
+                    return fb
+                except Exception as e:
+                    notes.append(f"• Fallback '{p}' unreadable: {e}")
+        return None
+
+    if selected_subjects and not frames:
+        fb = try_fallback()
+        if fb is None:
+            st.error("No valid subject CSVs found and no usable fallback 'questions.csv'.")
+            st.stop()
+        frames.append(fb)
+
+    if not selected_subjects and not frames:
+        # No subjects picked yet: return an empty frame
+        return pd.DataFrame(columns=REQUIRED_COLS)
+
+    df_all = pd.concat(frames, ignore_index=True)
+
+    # Deduplicate by id across selected files (keep first)
+    before = len(df_all)
+    df_all = df_all.drop_duplicates(subset=["id"], keep="first").reset_index(drop=True)
+    dups = before - len(df_all)
+    if dups:
+        notes.append(f"• Removed {dups} duplicate id(s) across selected subjects.")
+
+    # Developer-friendly notes in sidebar
+    if notes:
+        with st.sidebar.expander("Data load notes", expanded=False):
+            for n in notes:
+                st.caption(n)
+
+    return df_all
+
+# ========= Quiz helpers / UI (unchanged) =========
 def validate_df(df: pd.DataFrame) -> List[str]:
     return [c for c in REQUIRED_COLS if c not in df.columns]
 
@@ -174,20 +261,19 @@ def render_results(pool: pd.DataFrame):
     if st.button("Restart"):
         init_session_state(len(pool))
 
-# ---- Load Data ----
-df = load_fixed_csv()
-if df.empty:
-    st.error("Question set could not be loaded.")
-    st.stop()
-missing = validate_df(df)
-if missing:
-    st.error(f"CSV missing required columns: {missing}")
-    st.stop()
-
-# ---- Sidebar ----
+# ========= Sidebar: pick subjects, load only those CSVs, then start =========
 with st.sidebar:
     st.header("Build Quiz")
+
+    # Auto-discovered topics
+    if not SUBJECT_OPTIONS:
+        st.error(f"No topic CSVs found in '{CSV_FOLDER}'. Add files like 'biliary_atresia.csv' and reload.")
+        st.stop()
+
     pick_subjects = st.multiselect("Subject", SUBJECT_OPTIONS)
+
+    # Load only the CSVs for the selected subjects (safe, with fallback)
+    df = load_questions_for_subjects(pick_subjects)
 
     total = len(df)
     min_q = 1 if total >= 1 else 0
@@ -195,19 +281,21 @@ with st.sidebar:
     default_q = min(20, max_q) if max_q >= 1 else 1
     step_q = 1 if max_q < 10 else 5
 
-    n_questions = st.number_input("Number of Questions", min_value=min_q, max_value=max_q, step=step_q, value=default_q)
+    n_questions = st.number_input("Number of Questions",
+                                  min_value=min_q, max_value=max_q,
+                                  step=step_q, value=default_q)
 
     if st.button("Start ▶"):
-        pool = build_quiz_pool(df, pick_subjects)
-        if pool.empty:
-            pool = df.copy().reset_index(drop=True)
-        if len(pool) > n_questions:
-            pool = pool.sample(n=int(n_questions), random_state=42).reset_index(drop=True)
+        if df.empty:
+            st.warning("No questions available for the selected subject(s).")
         else:
-            pool = pool.sample(frac=1.0, random_state=42).reset_index(drop=True)
-        st.session_state.pool = pool
-        init_session_state(len(pool))
+            pool = (df.sample(n=int(n_questions), random_state=42).reset_index(drop=True)
+                    if len(df) > n_questions
+                    else df.sample(frac=1.0, random_state=42).reset_index(drop=True))
+            st.session_state.pool = pool
+            init_session_state(len(pool))
 
+# ========= Main stage =========
 pool = st.session_state.get("pool", None)
 if pool is None:
     st.write("Use the sidebar to start a quiz.")
