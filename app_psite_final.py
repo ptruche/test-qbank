@@ -7,28 +7,33 @@ import streamlit as st
 
 st.set_page_config(page_title="PSITE", page_icon=None, layout="wide")
 
-# ---- Tight, professional CSS (reduced gaps) ----
+# ---- Tight, professional CSS ----
 st.markdown(
     """
     <style>
     :root { --card-bg:#ffffff; --card-border:#e6e8ec; --accent:#1d4ed8; --muted:#6b7280; }
-    .q-card { background:var(--card-bg); border:1px solid var(--card-border); border-radius:12px; padding:1rem; box-shadow:0 1px 6px rgba(0,0,0,.04); }
-    .q-progress { height:6px; background:#eef0f3; border-radius:999px; overflow:hidden; margin:2px 0 6px 0; }
+    .q-card { background:var(--card-bg); border:1px solid var(--card-border);
+              border-radius:12px; padding:1rem; box-shadow:0 1px 6px rgba(0,0,0,.04); }
+    .q-progress { height:6px; background:#eef0f3; border-radius:999px; overflow:hidden; margin:2px 0 4px 0; }
     .q-progress > div { height:100%; background:var(--accent); width:0%; transition:width .25s ease; }
     .stat { border:1px solid var(--card-border); border-radius:10px; padding:.6rem .8rem; text-align:center; }
-    .sticky-top { position:sticky; top:0; z-index:50; background:white; padding:.4rem .25rem; border-bottom:1px solid #eef0f3; }
-    .top-title { font-weight:600; letter-spacing:.2px; font-size:1rem; }
-    /* Clean radio list + tighter spacing */
-    div[role="radiogroup"] > label { padding:6px 8px; border:1px solid var(--card-border); border-radius:8px; margin-bottom:6px; }
+    .sticky-top { position:sticky; top:0; z-index:50; background:white; 
+                  padding:.5rem .25rem; border-bottom:1px solid #eef0f3; overflow:visible; }
+    .top-title { font-weight:600; letter-spacing:.2px; font-size:1rem; margin-bottom:2px; }
+    /* Radio list + tighter spacing */
+    div[role="radiogroup"] > label { padding:6px 8px; border:1px solid var(--card-border);
+                                     border-radius:8px; margin-bottom:6px; }
     /* Question "textbox" */
-    .q-prompt { border:1px solid var(--card-border); background:#fafbfc; border-radius:10px; padding:12px 12px; margin-bottom:10px; }
+    .q-prompt { border:1px solid var(--card-border); background:#fafbfc; border-radius:10px;
+                padding:12px; margin:6px 0 8px 0; }
     .q-actions-bottom { margin-top:8px; }
-    /* Reduce global vertical whitespace from containers/buttons */
-    .block-container { padding-top: 1rem; padding-bottom: 1rem; }
-    .stButton>button { padding:0.35rem 0.8rem; border-radius:8px; }
-    .stRadio div[role="radiogroup"] { gap: 4px !important; }
+    /* Reduce global whitespace */
+    .block-container { padding-top: 0.8rem; padding-bottom: 0.8rem; }
+    .stButton>button { padding:0.35rem 0.8rem; border-radius:8px; line-height:1.15; }
     .stDivider { margin: 8px 0 !important; }
-    .stMarkdown p { margin-bottom: 0.4rem; }
+    .stMarkdown p { margin-bottom: 0.35rem; }
+    /* Kill any phantom top gap before the stem */
+    .q-card > div:first-child { margin-top: 0 !important; }
     </style>
     """, unsafe_allow_html=True
 )
@@ -59,7 +64,7 @@ def discover_topic_csvs(folder: str) -> dict:
 TOPIC_TO_CSV = discover_topic_csvs(CSV_FOLDER)
 SUBJECT_OPTIONS = list(TOPIC_TO_CSV.keys())
 
-# ========= Safe CSV readers =========
+# ========= CSV readers =========
 def _read_csv_strict(path: str) -> pd.DataFrame:
     df = pd.read_csv(path)
     missing = [c for c in REQUIRED_COLS if c not in df.columns]
@@ -71,24 +76,22 @@ def _read_csv_strict(path: str) -> pd.DataFrame:
     return df
 
 def _load_all_topics() -> pd.DataFrame:
-    notes = []
-    frames = []
+    notes, frames = [], []
     for subj, csv_path in TOPIC_TO_CSV.items():
         try:
             df = _read_csv_strict(csv_path)
         except Exception as e:
             notes.append(f"• Skipped {os.path.basename(csv_path)}: {e}")
             continue
-        # guard: only keep rows whose subject matches display name
         bad = df["subject"] != subj
         if bad.any():
             removed = int(bad.sum())
             df = df[~bad].copy()
             if removed:
-                notes.append(f"• {os.path.basename(csv_path)}: removed {removed} row(s) with mismatched subject.")
+                notes.append(f"• {os.path.basename(csv_path)}: removed {removed} mismatched row(s).")
         frames.append(df)
+
     if not frames:
-        # try fallback combined file
         for p in [os.path.join(CSV_FOLDER, "questions.csv"), "questions.csv"]:
             if os.path.exists(p):
                 try:
@@ -101,35 +104,31 @@ def _load_all_topics() -> pd.DataFrame:
         if not frames:
             st.error("No topic CSVs found and no usable fallback 'questions.csv'.")
             st.stop()
+
     if notes:
         with st.sidebar.expander("Data load notes", expanded=False):
             for n in notes:
                 st.caption(n)
+
     df_all = pd.concat(frames, ignore_index=True)
     df_all = df_all.drop_duplicates(subset=["id"], keep="first").reset_index(drop=True)
     return df_all
 
 def load_questions_for_subjects(selected_subjects, random_all: bool) -> pd.DataFrame:
-    """Load either all topics (random mix) or only chosen subjects; safe fallbacks."""
     if random_all:
         return _load_all_topics()
 
-    frames = []
-    notes = []
-
+    frames, notes = [], []
     if selected_subjects:
         for subj in selected_subjects:
             csv_path = TOPIC_TO_CSV.get(subj)
-            if not csv_path:
-                notes.append(f"• No CSV mapped for: {subj} (skipped)")
-                continue
-            if not os.path.exists(csv_path):
-                notes.append(f"• CSV not found: {csv_path} (skipped)")
+            if not csv_path or not os.path.exists(csv_path):
+                notes.append(f"• Missing CSV for: {subj}")
                 continue
             try:
                 df = _read_csv_strict(csv_path)
             except Exception as e:
-                notes.append(f"• Problem reading {csv_path}: {e} (skipped)")
+                notes.append(f"• Problem reading {csv_path}: {e}")
                 continue
             bad = df["subject"] != subj
             if bad.any():
@@ -140,7 +139,6 @@ def load_questions_for_subjects(selected_subjects, random_all: bool) -> pd.DataF
             frames.append(df)
 
     if selected_subjects and not frames:
-        # fallback combined file if user picked subjects but none loaded
         for p in [os.path.join(CSV_FOLDER, "questions.csv"), "questions.csv"]:
             if os.path.exists(p):
                 try:
@@ -170,43 +168,47 @@ def load_questions_for_subjects(selected_subjects, random_all: bool) -> pd.DataF
 def validate_df(df: pd.DataFrame) -> List[str]:
     return [c for c in REQUIRED_COLS if c not in df.columns]
 
-def build_quiz_pool(df: pd.DataFrame, subjects: List[str], random_all: bool) -> pd.DataFrame:
-    if random_all or not subjects:
-        return df.reset_index(drop=True)
-    out = df[df["subject"].astype(str).isin(subjects)].copy()
-    return out.reset_index(drop=True)
-
 def init_session_state(n:int):
     st.session_state.answers = [None]*n
     st.session_state.revealed = [False]*n
     st.session_state.current = 0
     st.session_state.finished = False
 
-def render_header(n:int, title_text: str):
-    pos = st.session_state.current
-    pct = int(((pos + 1) / max(n,1)) * 100)
-    st.markdown("<div class='sticky-top'>", unsafe_allow_html=True)
-    cols = st.columns([7,5])
-    with cols[0]:
-        st.markdown(f"<div class='top-title'>{title_text}</div>", unsafe_allow_html=True)
-        st.markdown(f"<div class='q-progress'><div style='width:{pct}%'></div></div>", unsafe_allow_html=True)
-        st.caption(f"Question {pos+1} of {n}")
-    with cols[1]:
-        # keep these small, non-blocking
-        c1, c2 = st.columns(2)
-        c1.button("Skip", key="hdr_skip")
-        c2.button("Finish", key="hdr_finish")
-    st.markdown("</div>", unsafe_allow_html=True)
-
-# --- Navigation callbacks (constant keys avoid double-click issue) ---
+# --- Navigation callbacks (constant keys) ---
 def _go_prev(n: int):
     st.session_state.current = max(st.session_state.current - 1, 0)
 
 def _go_next(n: int):
     st.session_state.current = min(st.session_state.current + 1, n - 1)
 
+def _skip(n: int):
+    _go_next(n)
+
+def _finish():
+    st.session_state.finished = True
+
 def _reveal(i: int):
     st.session_state.revealed[i] = True
+
+def render_header(n:int, title_text: str):
+    pos = st.session_state.current
+    pct = int(((pos + 1) / max(n,1)) * 100)
+    st.markdown("<div class='sticky-top'>", unsafe_allow_html=True)
+
+    left, right = st.columns([6,6])
+    with left:
+        st.markdown(f"<div class='top-title'>{title_text}</div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='q-progress'><div style='width:{pct}%'></div></div>", unsafe_allow_html=True)
+        st.caption(f"Question {pos+1} of {n}")
+    with right:
+        # One compact row: Prev | Next | Skip | Finish
+        b1, b2, b3, b4 = st.columns([1,1,1,1])
+        b1.button("Previous", key="hdr_prev", on_click=_go_prev, args=(n,), disabled=(pos == 0))
+        b2.button("Next",     key="hdr_next", on_click=_go_next, args=(n,), disabled=(pos == n-1))
+        b3.button("Skip",     key="hdr_skip", on_click=_skip,    args=(n,), disabled=(pos == n-1))
+        b4.button("Finish",   key="hdr_finish", on_click=_finish)
+
+    st.markdown("</div>", unsafe_allow_html=True)
 
 def render_question(pool: pd.DataFrame):
     i = st.session_state.current
@@ -215,25 +217,25 @@ def render_question(pool: pd.DataFrame):
 
     st.markdown("<div class='q-card'>", unsafe_allow_html=True)
 
-    # Question stem in a compact "textbox"
+    # Stem "textbox" (no bubble above)
     st.markdown(f"<div class='q-prompt'>{str(row['stem'])}</div>", unsafe_allow_html=True)
 
-    # Choices: single, clean radio group — remove empty label bubble by using empty label and collapsed visibility
+    # Choices: remove label (and its space) via empty label + collapsed visibility
     letters = ["A","B","C","D","E"]
     fmt = lambda L: str(row[L])
     selected = st.radio(
-        label="",                     # no label string
+        label="",                    # <- empty
         options=letters,
         format_func=fmt,
         index=(letters.index(st.session_state.answers[i]) if st.session_state.answers[i] in letters else None),
-        label_visibility="collapsed", # hide label space
+        label_visibility="collapsed",   # <- no label space
         key="radio_choice"
     )
     st.session_state.answers[i] = selected
 
     st.divider()
 
-    # Reveal button + explanation (tight spacing)
+    # Only Reveal is at the bottom now
     st.button("Reveal", key="btn_reveal", on_click=_reveal, args=(i,))
     if st.session_state.revealed[i]:
         correct_letter = str(row["correct"]).strip().upper()
@@ -245,15 +247,6 @@ def render_question(pool: pd.DataFrame):
         else:
             st.error("Incorrect")
         st.info(str(row["explanation"]))
-
-    # Bottom: Prev / Next (below explanation), compact layout
-    st.markdown("<div class='q-actions-bottom'>", unsafe_allow_html=True)
-    bcol1, bcol2, bcol3 = st.columns([1,6,1])
-    with bcol1:
-        st.button("Previous", key="btn_prev", on_click=_go_prev, args=(n,), disabled=(i == 0))
-    with bcol3:
-        st.button("Next", key="btn_next", on_click=_go_next, args=(n,), disabled=(i == n-1))
-    st.markdown("</div>", unsafe_allow_html=True)
 
     st.markdown("</div>", unsafe_allow_html=True)
 
@@ -299,13 +292,9 @@ with st.sidebar:
         st.error(f"No topic CSVs found in '{CSV_FOLDER}'. Add files like 'biliary_atresia.csv' and reload.")
         st.stop()
 
-    # NEW: Random-from-all toggle
     random_all = st.toggle("Random from all topics", value=False)
-
-    # If random_all is on, disable subject picker (informational display only)
     pick_subjects = st.multiselect("Subject", SUBJECT_OPTIONS, disabled=random_all)
 
-    # Load questions (either all topics or only chosen subjects)
     df = load_questions_for_subjects(pick_subjects, random_all=random_all)
 
     total = len(df)
@@ -336,7 +325,7 @@ if pool is None:
     st.write("Use the sidebar to start a quiz.")
     st.stop()
 
-# Dynamic title: subjects chosen or "Random Mix"
+# Header title: chosen subjects or Random Mix
 sel_subjects = st.session_state.get("selected_subjects", [])
 random_all = st.session_state.get("random_all", False)
 title_text = "Random Mix" if random_all else (", ".join(sel_subjects) if sel_subjects else "PSITE")
