@@ -7,41 +7,70 @@ import streamlit as st
 
 st.set_page_config(page_title="PSITE", page_icon=None, layout="wide")
 
-# ---- Tight, professional CSS ----
+# ================= CSS: tight layout + no clipping =================
 st.markdown(
     """
     <style>
     :root { --card-bg:#ffffff; --card-border:#e6e8ec; --accent:#1d4ed8; --muted:#6b7280; }
-    .q-card { background:var(--card-bg); border:1px solid var(--card-border);
-              border-radius:12px; padding:1rem; box-shadow:0 1px 6px rgba(0,0,0,.04); }
-    .q-progress { height:6px; background:#eef0f3; border-radius:999px; overflow:hidden; margin:2px 0 4px 0; }
-    .q-progress > div { height:100%; background:var(--accent); width:0%; transition:width .25s ease; }
-    .stat { border:1px solid var(--card-border); border-radius:10px; padding:.6rem .8rem; text-align:center; }
-    .sticky-top { position:sticky; top:0; z-index:50; background:white; 
-                  padding:.5rem .25rem; border-bottom:1px solid #eef0f3; overflow:visible; }
-    .top-title { font-weight:600; letter-spacing:.2px; font-size:1rem; margin-bottom:2px; }
-    /* Radio list + tighter spacing */
-    div[role="radiogroup"] > label { padding:6px 8px; border:1px solid var(--card-border);
-                                     border-radius:8px; margin-bottom:6px; }
-    /* Question "textbox" */
-    .q-prompt { border:1px solid var(--card-border); background:#fafbfc; border-radius:10px;
-                padding:12px; margin:6px 0 8px 0; }
-    .q-actions-bottom { margin-top:8px; }
-    /* Reduce global whitespace */
-    .block-container { padding-top: 0.8rem; padding-bottom: 0.8rem; }
-    .stButton>button { padding:0.35rem 0.8rem; border-radius:8px; line-height:1.15; }
+
+    /* Global spacing & overflow fixes */
+    .block-container { padding-top: 1.25rem !important; padding-bottom: 0.8rem !important; }
+    [data-testid="stHorizontalBlock"] { overflow: visible !important; }
+    [data-testid="stAppViewContainer"] { overflow: visible !important; }
+    [data-testid="stMain"] { overflow: visible !important; }
+
+    /* Sticky header */
+    .sticky-top {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: white;
+      padding: .65rem .5rem .5rem .5rem;
+      border-bottom: 1px solid #eef0f3;
+      overflow: visible;
+      box-shadow: 0 1px 0 rgba(0,0,0,0.02);
+      margin-bottom: .35rem;
+    }
+    .top-title {
+      font-weight: 600; letter-spacing: .2px; font-size: 1.05rem; line-height: 1.25;
+      margin: 0 0 .25rem 0;
+      white-space: nowrap;
+      overflow: visible;
+    }
+    .q-progress { height: 6px; background:#eef0f3; border-radius: 999px; overflow: hidden; margin: 0 0 4px 0; }
+    .q-progress > div { height:100%; background: var(--accent); width:0%; transition: width .25s ease; }
+
+    /* Header buttons row */
+    .hdr-row { display: flex; gap: .5rem; justify-content: flex-end; align-items: center; flex-wrap: wrap; }
+    .stButton>button { padding: 0.4rem 0.85rem; border-radius: 8px; line-height: 1.25; }
+
+    /* Card & content */
+    .q-card { background: var(--card-bg); border: 1px solid var(--card-border);
+              border-radius: 12px; padding: 1rem; box-shadow: 0 1px 6px rgba(0,0,0,.04); }
+    .q-prompt { border: 1px solid var(--card-border); background: #fafbfc; border-radius: 10px;
+                padding: 12px; margin: 6px 0 8px 0; }
+    .q-actions-bottom { margin-top: 8px; }
+
+    /* Radios: compact, no label "bubble" space */
+    div[role="radiogroup"] > label {
+      padding: 6px 8px; border: 1px solid var(--card-border); border-radius: 8px; margin-bottom: 6px;
+    }
+    .stRadio div[role="radiogroup"] { gap: 4px !important; }
+
     .stDivider { margin: 8px 0 !important; }
     .stMarkdown p { margin-bottom: 0.35rem; }
-    /* Kill any phantom top gap before the stem */
+
+    /* Ensure first child in q-card doesn’t add mysterious top gap */
     .q-card > div:first-child { margin-top: 0 !important; }
     </style>
-    """, unsafe_allow_html=True
+    """,
+    unsafe_allow_html=True
 )
 
 REQUIRED_COLS = ["id","subject","stem","A","B","C","D","E","correct","explanation"]
 
-# ========= Dynamic topic discovery =========
-CSV_FOLDER = "data"  # change to "." if CSVs live next to app.py
+# ================= Dynamic topic discovery =================
+CSV_FOLDER = "data"  # set to "." if CSVs live next to app.py
 
 def _pretty_name_from_filename(path: str) -> str:
     name = os.path.basename(path)
@@ -50,13 +79,14 @@ def _pretty_name_from_filename(path: str) -> str:
     return name.replace("_", " ").replace("-", " ").strip().title()
 
 def discover_topic_csvs(folder: str) -> dict:
+    """Return mapping { 'Pretty Subject Name': '/path/to/file.csv' } from folder/*.csv."""
     pattern = os.path.join(folder, "*.csv")
     files = glob.glob(pattern)
     mapping = {}
     for f in files:
         base = os.path.basename(f).lower()
         if base == "questions.csv":
-            continue  # keep as fallback only
+            continue  # keep fallback file out of the subject list
         pretty = _pretty_name_from_filename(f)
         mapping[pretty] = f
     return dict(sorted(mapping.items(), key=lambda x: x[0].lower()))
@@ -64,7 +94,7 @@ def discover_topic_csvs(folder: str) -> dict:
 TOPIC_TO_CSV = discover_topic_csvs(CSV_FOLDER)
 SUBJECT_OPTIONS = list(TOPIC_TO_CSV.keys())
 
-# ========= CSV readers =========
+# ================= CSV readers =================
 def _read_csv_strict(path: str) -> pd.DataFrame:
     df = pd.read_csv(path)
     missing = [c for c in REQUIRED_COLS if c not in df.columns]
@@ -92,6 +122,7 @@ def _load_all_topics() -> pd.DataFrame:
         frames.append(df)
 
     if not frames:
+        # try fallback combined file
         for p in [os.path.join(CSV_FOLDER, "questions.csv"), "questions.csv"]:
             if os.path.exists(p):
                 try:
@@ -115,6 +146,7 @@ def _load_all_topics() -> pd.DataFrame:
     return df_all
 
 def load_questions_for_subjects(selected_subjects, random_all: bool) -> pd.DataFrame:
+    """Load either all topics (random mix) or only chosen subjects; safe fallbacks."""
     if random_all:
         return _load_all_topics()
 
@@ -164,7 +196,7 @@ def load_questions_for_subjects(selected_subjects, random_all: bool) -> pd.DataF
     df_all = df_all.drop_duplicates(subset=["id"], keep="first").reset_index(drop=True)
     return df_all
 
-# ========= Quiz helpers / UI =========
+# ================= Quiz helpers / UI =================
 def validate_df(df: pd.DataFrame) -> List[str]:
     return [c for c in REQUIRED_COLS if c not in df.columns]
 
@@ -174,7 +206,7 @@ def init_session_state(n:int):
     st.session_state.current = 0
     st.session_state.finished = False
 
-# --- Navigation callbacks (constant keys) ---
+# Navigation callbacks (constant keys avoid double-click)
 def _go_prev(n: int):
     st.session_state.current = max(st.session_state.current - 1, 0)
 
@@ -196,17 +228,24 @@ def render_header(n:int, title_text: str):
     st.markdown("<div class='sticky-top'>", unsafe_allow_html=True)
 
     left, right = st.columns([6,6])
+
     with left:
         st.markdown(f"<div class='top-title'>{title_text}</div>", unsafe_allow_html=True)
         st.markdown(f"<div class='q-progress'><div style='width:{pct}%'></div></div>", unsafe_allow_html=True)
         st.caption(f"Question {pos+1} of {n}")
+
     with right:
-        # One compact row: Prev | Next | Skip | Finish
-        b1, b2, b3, b4 = st.columns([1,1,1,1])
-        b1.button("Previous", key="hdr_prev", on_click=_go_prev, args=(n,), disabled=(pos == 0))
-        b2.button("Next",     key="hdr_next", on_click=_go_next, args=(n,), disabled=(pos == n-1))
-        b3.button("Skip",     key="hdr_skip", on_click=_skip,    args=(n,), disabled=(pos == n-1))
-        b4.button("Finish",   key="hdr_finish", on_click=_finish)
+        st.markdown("<div class='hdr-row'>", unsafe_allow_html=True)
+        c1, c2, c3, c4 = st.columns([1,1,1,1])
+        with c1:
+            st.button("Previous", key="hdr_prev", on_click=_go_prev, args=(n,), disabled=(pos == 0))
+        with c2:
+            st.button("Next",     key="hdr_next", on_click=_go_next, args=(n,), disabled=(pos == n-1))
+        with c3:
+            st.button("Skip",     key="hdr_skip", on_click=_skip,    args=(n,), disabled=(pos == n-1))
+        with c4:
+            st.button("Finish",   key="hdr_finish", on_click=_finish)
+        st.markdown("</div>", unsafe_allow_html=True)
 
     st.markdown("</div>", unsafe_allow_html=True)
 
@@ -217,25 +256,25 @@ def render_question(pool: pd.DataFrame):
 
     st.markdown("<div class='q-card'>", unsafe_allow_html=True)
 
-    # Stem "textbox" (no bubble above)
+    # Stem in compact "textbox"
     st.markdown(f"<div class='q-prompt'>{str(row['stem'])}</div>", unsafe_allow_html=True)
 
-    # Choices: remove label (and its space) via empty label + collapsed visibility
+    # Choices: no label, collapsed visibility => no empty bubble
     letters = ["A","B","C","D","E"]
     fmt = lambda L: str(row[L])
     selected = st.radio(
-        label="",                    # <- empty
+        label="",
         options=letters,
         format_func=fmt,
         index=(letters.index(st.session_state.answers[i]) if st.session_state.answers[i] in letters else None),
-        label_visibility="collapsed",   # <- no label space
+        label_visibility="collapsed",
         key="radio_choice"
     )
     st.session_state.answers[i] = selected
 
     st.divider()
 
-    # Only Reveal is at the bottom now
+    # Only Reveal is at the bottom
     st.button("Reveal", key="btn_reveal", on_click=_reveal, args=(i,))
     if st.session_state.revealed[i]:
         correct_letter = str(row["correct"]).strip().upper()
@@ -284,7 +323,7 @@ def render_results(pool: pd.DataFrame):
     if st.button("Restart"):
         init_session_state(len(pool))
 
-# ========= Sidebar =========
+# ================= Sidebar =================
 with st.sidebar:
     st.header("Build Quiz")
 
@@ -319,7 +358,7 @@ with st.sidebar:
             st.session_state.random_all = random_all
             st.session_state.selected_subjects = pick_subjects
 
-# ========= Main stage =========
+# ================= Main stage =================
 pool = st.session_state.get("pool", None)
 if pool is None:
     st.write("Use the sidebar to start a quiz.")
