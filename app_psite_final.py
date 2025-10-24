@@ -7,7 +7,7 @@ import streamlit as st
 
 st.set_page_config(page_title="PSITE", page_icon=None, layout="wide")
 
-# ================= CSS (scroll fix + tight professional layout) =================
+# ================= CSS (scroll fix + tight, single-bubble layout) =================
 st.markdown(
     """
     <style>
@@ -45,12 +45,20 @@ st.markdown(
     .hdr-row { display: flex; gap: .5rem; justify-content: flex-end; align-items: center; flex-wrap: wrap; }
     .stButton>button { padding: 0.4rem 0.85rem; border-radius: 8px; line-height: 1.25; }
 
-    /* Question card & prompt */
-    .q-card { background: var(--card-bg); border: 1px solid var(--card-border);
-              border-radius: 12px; padding: 1rem; box-shadow: 0 1px 6px rgba(0,0,0,.04); }
+    /* Flatten outer "card" so there’s no extra bubble above the stem */
+    .q-card { border: none; background: transparent; padding: 0; box-shadow: none; }
+
+    /* Single visible bubble: the question prompt */
     .q-prompt { border: 1px solid var(--card-border); background: #fafbfc; border-radius: 10px;
-                padding: 12px; margin: 6px 0 8px 0; }
-    .q-actions-bottom { margin-top: 8px; }
+                padding: 12px; margin: 0 0 8px 0; }
+
+    .q-actions-row { display: flex; align-items: center; gap: .5rem; margin-top: 6px; }
+    .badge {
+      display: inline-block; font-size: .9rem; padding: .2rem .5rem; border-radius: 999px; line-height: 1.1;
+      border: 1px solid var(--card-border);
+    }
+    .badge-ok { background: #ecfdf5; border-color: #a7f3d0; }
+    .badge-err { background: #fef2f2; border-color: #fecaca; }
 
     /* Explanation panel: scrollable */
     .explain-panel {
@@ -60,6 +68,7 @@ st.markdown(
       border: 1px solid var(--card-border);
       border-radius: 10px;
       background: #fcfdff;
+      margin-top: 6px;
     }
 
     /* Radios: compact, no label bubble */
@@ -70,9 +79,6 @@ st.markdown(
 
     .stDivider { margin: 8px 0 !important; }
     .stMarkdown p { margin-bottom: 0.35rem; }
-
-    /* Prevent phantom top gap in question card */
-    .q-card > div:first-child { margin-top: 0 !important; }
     </style>
     """,
     unsafe_allow_html=True
@@ -81,7 +87,7 @@ st.markdown(
 REQUIRED_COLS = ["id","subject","stem","A","B","C","D","E","correct","explanation"]
 
 # ================= Dynamic topic discovery =================
-CSV_FOLDER = "data"
+CSV_FOLDER = "data"  # set to "." if CSVs live next to app.py
 
 def _pretty_name_from_filename(path: str) -> str:
     name = os.path.basename(path)
@@ -90,13 +96,14 @@ def _pretty_name_from_filename(path: str) -> str:
     return name.replace("_", " ").replace("-", " ").strip().title()
 
 def discover_topic_csvs(folder: str) -> dict:
+    """Return mapping { 'Pretty Subject Name': '/path/to/file.csv' } from folder/*.csv."""
     pattern = os.path.join(folder, "*.csv")
     files = glob.glob(pattern)
     mapping = {}
     for f in files:
         base = os.path.basename(f).lower()
         if base == "questions.csv":
-            continue
+            continue  # keep fallback out of the subject list
         pretty = _pretty_name_from_filename(f)
         mapping[pretty] = f
     return dict(sorted(mapping.items(), key=lambda x: x[0].lower()))
@@ -125,7 +132,7 @@ def _load_all_topics() -> pd.DataFrame:
         except Exception:
             continue
     if not frames:
-        st.error("No valid CSVs found in 'data' folder.")
+        st.error("No valid CSVs found in the data folder.")
         st.stop()
     df_all = pd.concat(frames, ignore_index=True)
     df_all = df_all.drop_duplicates(subset=["id"], keep="first").reset_index(drop=True)
@@ -157,6 +164,7 @@ def init_session_state(n:int):
     st.session_state.current = 0
     st.session_state.finished = False
 
+# Nav callbacks (constant keys avoid double-click)
 def _go_prev(n: int):
     st.session_state.current = max(st.session_state.current - 1, 0)
 def _go_next(n: int):
@@ -179,9 +187,9 @@ def render_header(n:int, title_text: str):
         st.markdown("<div class='hdr-row'>", unsafe_allow_html=True)
         c1, c2, c3, c4 = st.columns([1,1,1,1])
         with c1: st.button("Previous", key="hdr_prev", on_click=_go_prev, args=(n,), disabled=(pos == 0))
-        with c2: st.button("Next", key="hdr_next", on_click=_go_next, args=(n,), disabled=(pos == n-1))
-        with c3: st.button("Skip", key="hdr_skip", on_click=_skip, args=(n,), disabled=(pos == n-1))
-        with c4: st.button("Finish", key="hdr_finish", on_click=_finish)
+        with c2: st.button("Next",     key="hdr_next", on_click=_go_next, args=(n,), disabled=(pos == n-1))
+        with c3: st.button("Skip",     key="hdr_skip", on_click=_skip,    args=(n,), disabled=(pos == n-1))
+        with c4: st.button("Finish",   key="hdr_finish", on_click=_finish)
         st.markdown("</div>", unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
@@ -190,9 +198,13 @@ def render_question(pool: pd.DataFrame):
     n = len(pool)
     row = pool.iloc[i]
 
+    # Flattened container (no outer bubble), only the prompt shows as bubble
     st.markdown("<div class='q-card'>", unsafe_allow_html=True)
+
+    # Question stem (single visible bubble)
     st.markdown(f"<div class='q-prompt'>{str(row['stem'])}</div>", unsafe_allow_html=True)
 
+    # Choices: no label bubble
     letters = ["A","B","C","D","E"]
     fmt = lambda L: str(row[L])
     selected = st.radio(
@@ -205,20 +217,22 @@ def render_question(pool: pd.DataFrame):
     )
     st.session_state.answers[i] = selected
 
-    st.divider()
+    # Reveal row: button + inline badge (no extra dividers)
+    st.markdown("<div class='q-actions-row'>", unsafe_allow_html=True)
     st.button("Reveal", key="btn_reveal", on_click=_reveal, args=(i,))
-
     if st.session_state.revealed[i]:
         correct_letter = str(row["correct"]).strip().upper()
-        st.divider()
         if st.session_state.answers[i] is None:
-            st.warning("No answer selected.")
+            badge = "<span class='badge'>No answer selected</span>"
         elif st.session_state.answers[i] == correct_letter:
-            st.success("Correct")
+            badge = "<span class='badge badge-ok'>Correct</span>"
         else:
-            st.error("Incorrect")
+            badge = "<span class='badge badge-err'>Incorrect</span>"
+        st.markdown(badge, unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
 
-        # Scrollable explanation
+    # Explanation (scrollable panel) only after reveal
+    if st.session_state.revealed[i]:
         st.markdown("<div class='explain-panel'>", unsafe_allow_html=True)
         st.markdown(str(row["explanation"]), unsafe_allow_html=False)
         st.markdown("</div>", unsafe_allow_html=True)
