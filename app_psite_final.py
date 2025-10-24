@@ -7,7 +7,7 @@ import streamlit as st
 
 st.set_page_config(page_title="PSITE", page_icon=None, layout="wide")
 
-# ================= CSS: zero spacer under Reveal, minimal verdict, clean choices =================
+# ================= CSS: plain explanation (no bubble), tight UI =================
 st.markdown(
     """
     <style>
@@ -36,10 +36,15 @@ st.markdown(
     .hdr-row { display: flex; gap: .5rem; justify-content: flex-end; align-items: center; flex-wrap: wrap; }
     .stButton>button { padding: 0.4rem 0.85rem; border-radius: 8px; line-height: 1.25; }
 
-    /* Flat outer container; only stem uses a soft bubble */
+    /* Flat outer container; only the stem uses a soft bubble */
     .q-card { border: none; background: transparent; padding: 0; box-shadow: none; }
-    .q-prompt { border: 1px solid var(--card-border); background: #fafbfc; border-radius: 10px;
-                padding: 12px; margin: 0 0 8px 0; }
+    .q-prompt {
+      border: 1px solid var(--card-border);
+      background: #fafbfc;
+      border-radius: 10px;
+      padding: 12px;
+      margin: 0 0 8px 0;
+    }
 
     /* Choices: clean list, no per-choice bubbles */
     div[role="radiogroup"] > label {
@@ -51,7 +56,7 @@ st.markdown(
     div[role="radiogroup"] input:checked + div > p { text-decoration: underline; text-underline-offset: 3px; }
     .stRadio div[role="radiogroup"] { gap: 0 !important; }
 
-    /* Reveal row: minimal verdict inline; NO margins */
+    /* Reveal row: minimal verdict inline; NO extra margins */
     .q-actions-row { display: flex; align-items: center; gap: .6rem; margin: 0; }
     .verdict {
       display: inline-flex; align-items: center;
@@ -61,16 +66,14 @@ st.markdown(
     .verdict-ok  { background: #10b9811a; color: #065f46; border-color: #34d399; }
     .verdict-err { background: #ef44441a; color: #7f1d1d; border-color: #fca5a5; }
 
-    /* Explanation panel: sits IMMEDIATELY under Reveal row (single markdown block) */
-    .explain-panel {
-      max-height: 52vh; overflow-y: auto; padding: 10px 12px;
-      border: 1px solid var(--card-border); border-radius: 10px; background: #fcfdff;
-      margin-top: 0;   /* no spacer */
+    /* Explanation: plain background (no bubble) */
+    .explain-plain {
+      margin-top: 0;              /* butt up against the reveal row */
+      padding: 8px 0 0 0;         /* a hair of breathing room without a box */
+      background: transparent !important;
+      border: none !important;
+      box-shadow: none !important;
     }
-
-    /* Kill any empty paragraphs that Streamlit may inject */
-    .explain-panel p:empty { display:none !important; margin:0 !important; padding:0 !important; }
-    .q-actions-row + div:empty { display:none !important; }
 
     .stDivider { margin: 8px 0 !important; }
     .stMarkdown p { margin-bottom: 0.35rem; }
@@ -191,7 +194,7 @@ def render_question(pool: pd.DataFrame):
 
     st.markdown("<div class='q-card'>", unsafe_allow_html=True)
 
-    # Question stem
+    # Question stem (soft bubble)
     st.markdown(f"<div class='q-prompt'>{str(row['stem'])}</div>", unsafe_allow_html=True)
 
     # Answer choices (no bubbles)
@@ -204,7 +207,7 @@ def render_question(pool: pd.DataFrame):
     )
     st.session_state.answers[i] = selected
 
-    # Reveal row: minimal verdict inline; NO spacer below
+    # Reveal row: minimal verdict inline
     st.markdown("<div class='q-actions-row'>", unsafe_allow_html=True)
     col_btn, col_v = st.columns([1,6], gap="small")
     with col_btn:
@@ -220,10 +223,11 @@ def render_question(pool: pd.DataFrame):
             st.markdown(verdict_html, unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # Explanation panel: single markdown call (no open/close pairs => no empty block)
+    # Explanation on plain background (no wrapper div, no bubble)
     if st.session_state.revealed[i]:
-        explain_html = f"<div class='explain-panel'>{str(row['explanation'])}</div>"
-        st.markdown(explain_html, unsafe_allow_html=True)
+        st.markdown("<div class='explain-plain'>", unsafe_allow_html=True)
+        st.markdown(str(row["explanation"]), unsafe_allow_html=False)
+        st.markdown("</div>", unsafe_allow_html=True)
 
     st.markdown("</div>", unsafe_allow_html=True)
 
@@ -292,40 +296,8 @@ sel_subjects = st.session_state.get("selected_subjects", [])
 random_all = st.session_state.get("random_all", False)
 title_text = "Random Mix" if random_all else (", ".join(sel_subjects) if sel_subjects else "PSITE")
 
-def render_header(n:int, title_text: str):
-    pos = st.session_state.current
-    pct = int(((pos + 1) / max(n,1)) * 100)
-    st.markdown("<div class='sticky-top'>", unsafe_allow_html=True)
-
-    left, right = st.columns([6,6])
-    with left:
-        st.markdown(f"<div class='top-title'>{title_text}</div>", unsafe_allow_html=True)
-        st.markdown(f"<div class='q-progress'><div style='width:{pct}%'></div></div>", unsafe_allow_html=True)
-        st.caption(f"Question {pos+1} of {n}")
-    with right:
-        st.markdown("<div class='hdr-row'>", unsafe_allow_html=True)
-        c1, c2, c3, c4 = st.columns([1,1,1,1])
-        with c1: st.button("Previous", key="hdr_prev", on_click=lambda: _go_prev(n), disabled=(pos == 0))
-        with c2: st.button("Next",     key="hdr_next", on_click=lambda: _go_next(n), disabled=(pos == n-1))
-        with c3: st.button("Skip",     key="hdr_skip", on_click=lambda: _skip(n), disabled=(pos == n-1))
-        with c4: st.button("Finish",   key="hdr_finish", on_click=_finish)
-        st.markdown("</div>", unsafe_allow_html=True)
-    st.markdown("</div>", unsafe_allow_html=True)
-
 render_header(len(pool), title_text)
 if st.session_state.finished:
-    # Simple results header only (kept minimal)
-    n = len(pool)
-    answers = st.session_state.answers
-    revealed = st.session_state.revealed
-    correct_letters = [str(x).strip().upper() for x in pool["correct"].tolist()]
-    is_correct = [a == c and a is not None and r for a,c,r in zip(answers, correct_letters, revealed)]
-    total_correct = sum(is_correct)
-    total_revealed = sum(1 for r in revealed if r)
-    st.markdown("## Results")
-    cols = st.columns(3)
-    with cols[0]: st.metric("Answered", f"{total_revealed}/{n}")
-    with cols[1]: st.metric("Correct", f"{total_correct}/{n}")
-    with cols[2]: st.metric("Score", f"{int(100*total_correct/max(n,1))}%")
+    render_results(pool)
 else:
     render_question(pool)
