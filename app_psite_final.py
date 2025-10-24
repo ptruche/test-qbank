@@ -1,7 +1,7 @@
 import os
 import glob
 import json
-from typing import List
+from typing import List, Dict, Set
 import pandas as pd
 import streamlit as st
 
@@ -68,8 +68,8 @@ st.markdown(
 
     /* Explanation: plain background (no bubble) */
     .explain-plain {
-      margin-top: 0;              /* butt up against the reveal row */
-      padding: 8px 0 0 0;         /* a hair of breathing room without a box */
+      margin-top: 0;
+      padding: 8px 0 0 0;
       background: transparent !important;
       border: none !important;
       box-shadow: none !important;
@@ -83,73 +83,90 @@ st.markdown(
 )
 
 REQUIRED_COLS = ["id","subject","stem","A","B","C","D","E","correct","explanation"]
-
-# ================= Dynamic topic discovery =================
-CSV_FOLDER = "data"  # set to "." if CSVs live next to app.py
-
-def _pretty_name_from_filename(path: str) -> str:
-    name = os.path.basename(path)
-    if name.lower().endswith(".csv"):
-        name = name[:-4]
-    return name.replace("_", " ").replace("-", " ").strip().title()
-
-def discover_topic_csvs(folder: str) -> dict:
-    pattern = os.path.join(folder, "*.csv")
-    files = glob.glob(pattern)
-    mapping = {}
-    for f in files:
-        base = os.path.basename(f).lower()
-        if base == "questions.csv":
-            continue
-        pretty = _pretty_name_from_filename(f)
-        mapping[pretty] = f
-    return dict(sorted(mapping.items(), key=lambda x: x[0].lower()))
-
-TOPIC_TO_CSV = discover_topic_csvs(CSV_FOLDER)
-SUBJECT_OPTIONS = list(TOPIC_TO_CSV.keys())
+CSV_FOLDER = "data"  # change if needed
 
 # ================= CSV readers =================
 def _read_csv_strict(path: str) -> pd.DataFrame:
     df = pd.read_csv(path)
     missing = [c for c in REQUIRED_COLS if c not in df.columns]
     if missing:
-        raise ValueError(f"{path} is missing columns: {missing}")
+        raise ValueError(f"{os.path.basename(path)} is missing columns: {missing}")
     df = df[REQUIRED_COLS].copy()
+    # normalize types/whitespace
     df["id"] = df["id"].astype(str).str.strip()
     df["subject"] = df["subject"].astype(str).str.strip()
+    for col in ["A","B","C","D","E","stem","explanation","correct"]:
+        df[col] = df[col].astype(str)
+    # normalize correct letter
+    df["correct"] = df["correct"].str.strip().str.upper()
     return df
 
-def _load_all_topics() -> pd.DataFrame:
-    frames = []
-    for subj, csv_path in TOPIC_TO_CSV.items():
+# ================= NEW: Discover subjects from CSV *content* =================
+def discover_subjects_from_csvs(folder: str) -> Dict[str, Set[str]]:
+    """
+    Returns a mapping: subject_name -> set of CSV file paths that contain at least one row with that subject.
+    This uses the 'subject' column INSIDE each CSV (not the filename).
+    """
+    pattern = os.path.join(folder, "*.csv")
+    files = glob.glob(pattern)
+    if not files:
+        return {}
+    subj_to_files: Dict[str, Set[str]] = {}
+    for f in files:
         try:
-            df = _read_csv_strict(csv_path)
-            df = df[df["subject"] == subj]
-            frames.append(df)
+            df = _read_csv_strict(f)
         except Exception:
+            # skip invalid files silently
             continue
+        for subj in df["subject"].dropna().astype(str).str.strip().unique():
+            subj_to_files.setdefault(subj, set()).add(f)
+    return subj_to_files
+
+SUBJECT_TO_FILES = discover_subjects_from_csvs(CSV_FOLDER)
+SUBJECT_OPTIONS = sorted(SUBJECT_TO_FILES.keys(), key=lambda s: s.lower())
+
+# ================= Loaders that use CSV *content* subjects =================
+def _load_all_topics() -> pd.DataFrame:
+    """Load all rows from all CSVs; subjects come from each row's 'subject' field."""
+    frames = []
+    for files in SUBJECT_TO_FILES.values():
+        for f in files:
+            try:
+                frames.append(_read_csv_strict(f))
+            except Exception:
+                pass
     if not frames:
         st.error("No valid CSVs found in the data folder.")
         st.stop()
     df_all = pd.concat(frames, ignore_index=True)
+    # drop duplicate IDs across files (keep first)
     df_all = df_all.drop_duplicates(subset=["id"], keep="first").reset_index(drop=True)
     return df_all
 
-def load_questions_for_subjects(selected_subjects, random_all: bool) -> pd.DataFrame:
+def load_questions_for_subjects(selected_subjects: List[str], random_all: bool) -> pd.DataFrame:
     if random_all:
         return _load_all_topics()
+
+    if not selected_subjects:
+        return pd.DataFrame(columns=REQUIRED_COLS)
+
     frames = []
+    # only read files that have at least one of the requested subjects
+    files_to_read = set()
     for subj in selected_subjects:
-        csv_path = TOPIC_TO_CSV.get(subj)
-        if csv_path and os.path.exists(csv_path):
-            try:
-                df = _read_csv_strict(csv_path)
-                df = df[df["subject"] == subj]
-                frames.append(df)
-            except Exception:
-                pass
+        files_to_read |= SUBJECT_TO_FILES.get(subj, set())
+
+    for f in files_to_read:
+        try:
+            df = _read_csv_strict(f)
+            # filter rows by requested subjects, using the CSV's own 'subject' values
+            frames.append(df[df["subject"].isin(selected_subjects)])
+        except Exception:
+            pass
+
     if not frames:
         return pd.DataFrame(columns=REQUIRED_COLS)
+
     df_all = pd.concat(frames, ignore_index=True)
     df_all = df_all.drop_duplicates(subset=["id"], keep="first").reset_index(drop=True)
     return df_all
@@ -259,7 +276,8 @@ with st.sidebar:
     st.header("Build Quiz")
 
     if not SUBJECT_OPTIONS:
-        st.error(f"No topic CSVs found in '{CSV_FOLDER}'. Add files like 'biliary_atresia.csv' and reload.")
+        st.error(f"No subjects found inside CSVs in '{CSV_FOLDER}'. "
+                 f"Ensure your files include a 'subject' column with values.")
         st.stop()
 
     random_all = st.toggle("Random from all topics", value=False)
