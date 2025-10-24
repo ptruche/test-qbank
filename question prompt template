@@ -85,10 +85,8 @@ The explanation field should include all headings, paragraphs, and references in
 - Use formal surgical English.  
 - No humor, fluff, or conversational phrasing.
 
----
 
-### Example Instruction
-Generate 5 pediatric surgery written board–style questions on [TOPIC].  
+Now generate 5 pediatric surgery written board–style questions on [TOPIC].  
 Each question should test one distinct learning point (e.g., embryology, diagnosis, operative detail, complication, or prognosis).  
 Each explanation should go deep into the exact concept tested — with 4–6 paragraphs that teach the nuance, anatomy, and reasoning at the fellowship level.  
 Output the result in CSV format with columns: id,subject,stem,A,B,C,D,E,correct,explanation.
