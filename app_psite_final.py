@@ -18,7 +18,11 @@ st.markdown(
     .stat { border:1px solid var(--card-border); border-radius:12px; padding:.9rem 1rem; text-align:center; }
     .sticky-top { position:sticky; top:0; z-index:50; background:white; padding:.6rem .5rem; border-bottom:1px solid #eef0f3; }
     .top-title { font-weight:600; letter-spacing:.2px; }
+    /* Clean radio list */
     div[role="radiogroup"] > label { padding:8px 10px; border:1px solid var(--card-border); border-radius:10px; margin-bottom:8px; }
+    /* Question "textbox" style */
+    .q-prompt { border:1px solid var(--card-border); background:#fafbfc; border-radius:12px; padding:14px 16px; margin-bottom:14px; }
+    .q-actions-bottom { margin-top:12px; }
     </style>
     """, unsafe_allow_html=True
 )
@@ -26,29 +30,22 @@ st.markdown(
 REQUIRED_COLS = ["id","subject","stem","A","B","C","D","E","correct","explanation"]
 
 # ========= Dynamic topic discovery =========
-# Put your per-topic CSVs in this folder. If you prefer repo root, set CSV_FOLDER = "."
-CSV_FOLDER = "data"  # change to "." if your CSVs are alongside app.py
+CSV_FOLDER = "data"  # change to "." if CSVs live next to app.py
 
 def _pretty_name_from_filename(path: str) -> str:
     name = os.path.basename(path)
     if name.lower().endswith(".csv"):
         name = name[:-4]
-    # convert underscores/dashes to spaces, title-case the result
     return name.replace("_", " ").replace("-", " ").strip().title()
 
 def discover_topic_csvs(folder: str) -> dict:
-    """
-    Returns a mapping { 'Pretty Subject Name': '/path/to/file.csv' }
-    Ignores a generic 'questions.csv' so the list is truly topic CSVs.
-    """
     pattern = os.path.join(folder, "*.csv")
     files = glob.glob(pattern)
     mapping = {}
     for f in files:
         base = os.path.basename(f).lower()
         if base == "questions.csv":
-            # keep a generic combined file available as a fallback but don't show it as a "topic"
-            continue
+            continue  # keep as fallback only
         pretty = _pretty_name_from_filename(f)
         mapping[pretty] = f
     return dict(sorted(mapping.items(), key=lambda x: x[0].lower()))
@@ -58,7 +55,6 @@ SUBJECT_OPTIONS = list(TOPIC_TO_CSV.keys())
 
 # ========= Safe, topic-aware loader =========
 def _read_csv_strict(path: str) -> pd.DataFrame:
-    """Read a CSV and validate required columns."""
     df = pd.read_csv(path)
     missing = [c for c in REQUIRED_COLS if c not in df.columns]
     if missing:
@@ -69,16 +65,9 @@ def _read_csv_strict(path: str) -> pd.DataFrame:
     return df
 
 def load_questions_for_subjects(selected_subjects) -> pd.DataFrame:
-    """
-    Load questions only from CSVs corresponding to the selected subjects.
-    - Skips any file that is missing or malformed (notes shown in sidebar).
-    - If nothing loads but a fallback 'questions.csv' exists at CSV_FOLDER or repo root, uses it.
-    - If still nothing, stops with a friendly error.
-    """
     frames = []
     notes = []
 
-    # Load per-topic files
     if selected_subjects:
         for subj in selected_subjects:
             csv_path = TOPIC_TO_CSV.get(subj)
@@ -94,7 +83,7 @@ def load_questions_for_subjects(selected_subjects) -> pd.DataFrame:
                 notes.append(f"• Problem reading {csv_path}: {e} (skipped)")
                 continue
 
-            # Keep only rows that match the intended subject (in case of mix-ups)
+            # Keep only intended subject rows
             bad = df["subject"] != subj
             if bad.any():
                 kept = df[~bad].copy()
@@ -105,43 +94,31 @@ def load_questions_for_subjects(selected_subjects) -> pd.DataFrame:
 
             frames.append(df)
 
-    # Fallback: a generic combined file named 'questions.csv' in CSV_FOLDER or repo root
-    def try_fallback() -> pd.DataFrame | None:
-        cands = [
-            os.path.join(CSV_FOLDER, "questions.csv"),
-            "questions.csv",
-        ]
-        for p in cands:
+    # Fallback to a combined questions.csv if nothing loaded
+    if selected_subjects and not frames:
+        for p in [os.path.join(CSV_FOLDER, "questions.csv"), "questions.csv"]:
             if os.path.exists(p):
                 try:
                     fb = _read_csv_strict(p)
+                    frames.append(fb)
                     notes.append(f"• Loaded fallback '{p}' because no subject CSVs were usable.")
-                    return fb
+                    break
                 except Exception as e:
                     notes.append(f"• Fallback '{p}' unreadable: {e}")
-        return None
-
-    if selected_subjects and not frames:
-        fb = try_fallback()
-        if fb is None:
+        if not frames:
             st.error("No valid subject CSVs found and no usable fallback 'questions.csv'.")
             st.stop()
-        frames.append(fb)
 
     if not selected_subjects and not frames:
-        # No subjects picked yet: return an empty frame
         return pd.DataFrame(columns=REQUIRED_COLS)
 
     df_all = pd.concat(frames, ignore_index=True)
-
-    # Deduplicate by id across selected files (keep first)
     before = len(df_all)
     df_all = df_all.drop_duplicates(subset=["id"], keep="first").reset_index(drop=True)
     dups = before - len(df_all)
     if dups:
         notes.append(f"• Removed {dups} duplicate id(s) across selected subjects.")
 
-    # Developer-friendly notes in sidebar
     if notes:
         with st.sidebar.expander("Data load notes", expanded=False):
             for n in notes:
@@ -149,7 +126,7 @@ def load_questions_for_subjects(selected_subjects) -> pd.DataFrame:
 
     return df_all
 
-# ========= Quiz helpers / UI (unchanged) =========
+# ========= Quiz helpers / UI =========
 def validate_df(df: pd.DataFrame) -> List[str]:
     return [c for c in REQUIRED_COLS if c not in df.columns]
 
@@ -175,12 +152,21 @@ def render_header(n:int):
         st.markdown(f"<div class='q-progress'><div style='width:{pct}%'></div></div>", unsafe_allow_html=True)
         st.caption(f"Question {pos+1} of {n}")
     with cols[1]:
+        # Keep Skip/Finish here if you like, or remove and put below too.
         c1, c2 = st.columns(2)
-        if c1.button("Skip"):
-            st.session_state.current = min(st.session_state.current + 1, n - 1)
-        if c2.button("Finish"):
-            st.session_state.finished = True
+        c1.button("Skip")
+        c2.button("Finish")
     st.markdown("</div>", unsafe_allow_html=True)
+
+# --- Navigation callbacks with constant keys (fixes double-click issue) ---
+def _go_prev(n: int):
+    st.session_state.current = max(st.session_state.current - 1, 0)
+
+def _go_next(n: int):
+    st.session_state.current = min(st.session_state.current + 1, n - 1)
+
+def _reveal(i: int):
+    st.session_state.revealed[i] = True
 
 def render_question(pool: pd.DataFrame):
     i = st.session_state.current
@@ -188,8 +174,11 @@ def render_question(pool: pd.DataFrame):
     row = pool.iloc[i]
 
     st.markdown("<div class='q-card'>", unsafe_allow_html=True)
-    st.markdown(str(row["stem"]))
 
+    # Top: question inside a "textbox"
+    st.markdown(f"<div class='q-prompt'>{str(row['stem'])}</div>", unsafe_allow_html=True)
+
+    # Choices: single, clean radio group
     letters = ["A","B","C","D","E"]
     fmt = lambda L: str(row[L])
     selected = st.radio(
@@ -198,22 +187,14 @@ def render_question(pool: pd.DataFrame):
         format_func=fmt,
         index=(letters.index(st.session_state.answers[i]) if st.session_state.answers[i] in letters else None),
         label_visibility="collapsed",
-        key=f"radio_{i}"
+        key="radio_choice"  # constant key OK for a single radio per page
     )
     st.session_state.answers[i] = selected
 
     st.divider()
-    ac = st.columns([1,1,1,6])
-    with ac[0]:
-        if st.button("Reveal", key=f"reveal_{i}"):
-            st.session_state.revealed[i] = True
-    with ac[1]:
-        if st.button("Prev", key=f"prev_{i}"):
-            st.session_state.current = max(st.session_state.current - 1, 0)
-    with ac[2]:
-        if st.button("Next", key=f"next_{i}"):
-            st.session_state.current = min(st.session_state.current + 1, n - 1)
 
+    # Reveal / Explanation
+    st.button("Reveal", key="btn_reveal", on_click=_reveal, args=(i,))
     if st.session_state.revealed[i]:
         correct_letter = str(row["correct"]).strip().upper()
         st.divider()
@@ -224,6 +205,15 @@ def render_question(pool: pd.DataFrame):
         else:
             st.error("Incorrect")
         st.info(str(row["explanation"]))
+
+    # Bottom: Prev / Next (moved below explanation)
+    st.markdown("<div class='q-actions-bottom'>", unsafe_allow_html=True)
+    bcol1, bcol2, bcol3 = st.columns([1,6,1])
+    with bcol1:
+        st.button("Previous", key="btn_prev", on_click=_go_prev, args=(n,), disabled=(i == 0))
+    with bcol3:
+        st.button("Next", key="btn_next", on_click=_go_next, args=(n,), disabled=(i == n-1))
+    st.markdown("</div>", unsafe_allow_html=True)
 
     st.markdown("</div>", unsafe_allow_html=True)
 
@@ -265,14 +255,12 @@ def render_results(pool: pd.DataFrame):
 with st.sidebar:
     st.header("Build Quiz")
 
-    # Auto-discovered topics
     if not SUBJECT_OPTIONS:
         st.error(f"No topic CSVs found in '{CSV_FOLDER}'. Add files like 'biliary_atresia.csv' and reload.")
         st.stop()
 
     pick_subjects = st.multiselect("Subject", SUBJECT_OPTIONS)
 
-    # Load only the CSVs for the selected subjects (safe, with fallback)
     df = load_questions_for_subjects(pick_subjects)
 
     total = len(df)
@@ -281,11 +269,11 @@ with st.sidebar:
     default_q = min(20, max_q) if max_q >= 1 else 1
     step_q = 1 if max_q < 10 else 5
 
-    n_questions = st.number_input("Number of Questions",
-                                  min_value=min_q, max_value=max_q,
-                                  step=step_q, value=default_q)
+    n_questions = st.number_input(
+        "Number of Questions", min_value=min_q, max_value=max_q, step=step_q, value=default_q
+    )
 
-    if st.button("Start ▶"):
+    if st.button("Start ▶", key="btn_start"):
         if df.empty:
             st.warning("No questions available for the selected subject(s).")
         else:
