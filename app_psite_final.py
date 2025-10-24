@@ -124,7 +124,7 @@ def _load_all_topics() -> pd.DataFrame:
     for subj, csv_path in TOPIC_TO_CSV.items():
         try:
             df = _read_csv_strict(csv_path)
-            df["subject"] = subj]
+            df = df[df["subject"] == subj]
             frames.append(df)
         except Exception:
             continue
@@ -144,7 +144,7 @@ def load_questions_for_subjects(selected_subjects, random_all: bool) -> pd.DataF
         if csv_path and os.path.exists(csv_path):
             try:
                 df = _read_csv_strict(csv_path)
-                df["subject"] = subj]
+                df = df[df["subject"] == subj]
                 frames.append(df)
             except Exception:
                 pass
