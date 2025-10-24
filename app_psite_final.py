@@ -7,7 +7,7 @@ import streamlit as st
 
 st.set_page_config(page_title="PSITE", page_icon=None, layout="wide")
 
-# ================= CSS (scroll fix + tight, single-bubble layout) =================
+# ================= CSS (scroll fix + tight layout + inline Reveal/badge) =================
 st.markdown(
     """
     <style>
@@ -22,21 +22,13 @@ st.markdown(
 
     /* Sticky header */
     .sticky-top {
-      position: sticky;
-      top: 0;
-      z-index: 100;
-      background: white;
-      padding: .65rem .5rem .5rem .5rem;
-      border-bottom: 1px solid #eef0f3;
-      overflow: visible;
-      box-shadow: 0 1px 0 rgba(0,0,0,0.02);
-      margin-bottom: .35rem;
+      position: sticky; top: 0; z-index: 100; background: white;
+      padding: .65rem .5rem .5rem .5rem; border-bottom: 1px solid #eef0f3;
+      overflow: visible; box-shadow: 0 1px 0 rgba(0,0,0,0.02); margin-bottom: .35rem;
     }
     .top-title {
       font-weight: 600; letter-spacing: .2px; font-size: 1.05rem; line-height: 1.25;
-      margin: 0 0 .25rem 0;
-      white-space: nowrap;
-      overflow: visible;
+      margin: 0 0 .25rem 0; white-space: nowrap; overflow: visible;
     }
     .q-progress { height: 6px; background:#eef0f3; border-radius: 999px; overflow: hidden; margin: 0 0 4px 0; }
     .q-progress > div { height:100%; background: var(--accent); width:0%; transition: width .25s ease; }
@@ -45,29 +37,27 @@ st.markdown(
     .hdr-row { display: flex; gap: .5rem; justify-content: flex-end; align-items: center; flex-wrap: wrap; }
     .stButton>button { padding: 0.4rem 0.85rem; border-radius: 8px; line-height: 1.25; }
 
-    /* Flatten outer "card" so there’s no extra bubble above the stem */
+    /* Flatten outer container; only stem bubble visible */
     .q-card { border: none; background: transparent; padding: 0; box-shadow: none; }
 
-    /* Single visible bubble: the question prompt */
+    /* Question bubble */
     .q-prompt { border: 1px solid var(--card-border); background: #fafbfc; border-radius: 10px;
                 padding: 12px; margin: 0 0 8px 0; }
 
-    .q-actions-row { display: flex; align-items: center; gap: .5rem; margin-top: 6px; }
+    /* Reveal row (button + inline badge) */
+    .q-actions-row { display: flex; align-items: center; gap: .5rem; margin: 6px 0 0 0; }
     .badge {
       display: inline-block; font-size: .9rem; padding: .2rem .5rem; border-radius: 999px; line-height: 1.1;
-      border: 1px solid var(--card-border);
+      border: 1px solid var(--card-border); white-space: nowrap;
     }
-    .badge-ok { background: #ecfdf5; border-color: #a7f3d0; }
+    .badge-ok  { background: #ecfdf5; border-color: #a7f3d0; }
     .badge-err { background: #fef2f2; border-color: #fecaca; }
+    .badge-info{ background: #eff6ff; border-color: #bfdbfe; }
 
-    /* Explanation panel: scrollable */
+    /* Explanation panel (no extra spacer above it) */
     .explain-panel {
-      max-height: 52vh;
-      overflow-y: auto;
-      padding: 8px 10px;
-      border: 1px solid var(--card-border);
-      border-radius: 10px;
-      background: #fcfdff;
+      max-height: 52vh; overflow-y: auto; padding: 8px 10px;
+      border: 1px solid var(--card-border); border-radius: 10px; background: #fcfdff;
       margin-top: 6px;
     }
 
@@ -96,14 +86,13 @@ def _pretty_name_from_filename(path: str) -> str:
     return name.replace("_", " ").replace("-", " ").strip().title()
 
 def discover_topic_csvs(folder: str) -> dict:
-    """Return mapping { 'Pretty Subject Name': '/path/to/file.csv' } from folder/*.csv."""
     pattern = os.path.join(folder, "*.csv")
     files = glob.glob(pattern)
     mapping = {}
     for f in files:
         base = os.path.basename(f).lower()
         if base == "questions.csv":
-            continue  # keep fallback out of the subject list
+            continue  # keep fallback out of list
         pretty = _pretty_name_from_filename(f)
         mapping[pretty] = f
     return dict(sorted(mapping.items(), key=lambda x: x[0].lower()))
@@ -188,7 +177,7 @@ def render_header(n:int, title_text: str):
         c1, c2, c3, c4 = st.columns([1,1,1,1])
         with c1: st.button("Previous", key="hdr_prev", on_click=_go_prev, args=(n,), disabled=(pos == 0))
         with c2: st.button("Next",     key="hdr_next", on_click=_go_next, args=(n,), disabled=(pos == n-1))
-        with c3: st.button("Skip",     key="hdr_skip", on_click=_skip,    args=(n,), disabled=(pos == n-1))
+        with c3: st.button("Skip",     key="hdr_skip", on_click="_", disabled=True)  # visually present; use Next instead
         with c4: st.button("Finish",   key="hdr_finish", on_click=_finish)
         st.markdown("</div>", unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
@@ -198,10 +187,10 @@ def render_question(pool: pd.DataFrame):
     n = len(pool)
     row = pool.iloc[i]
 
-    # Flattened container (no outer bubble), only the prompt shows as bubble
+    # Outer container (flat)
     st.markdown("<div class='q-card'>", unsafe_allow_html=True)
 
-    # Question stem (single visible bubble)
+    # Question stem bubble
     st.markdown(f"<div class='q-prompt'>{str(row['stem'])}</div>", unsafe_allow_html=True)
 
     # Choices: no label bubble
@@ -217,21 +206,23 @@ def render_question(pool: pd.DataFrame):
     )
     st.session_state.answers[i] = selected
 
-    # Reveal row: button + inline badge (no extra dividers)
+    # Reveal row: button and badge in the same row (no extra divider/spacer)
     st.markdown("<div class='q-actions-row'>", unsafe_allow_html=True)
-    st.button("Reveal", key="btn_reveal", on_click=_reveal, args=(i,))
-    if st.session_state.revealed[i]:
-        correct_letter = str(row["correct"]).strip().upper()
-        if st.session_state.answers[i] is None:
-            badge = "<span class='badge'>No answer selected</span>"
-        elif st.session_state.answers[i] == correct_letter:
-            badge = "<span class='badge badge-ok'>Correct</span>"
-        else:
-            badge = "<span class='badge badge-err'>Incorrect</span>"
-        st.markdown(badge, unsafe_allow_html=True)
+    left, right = st.columns([1,6], gap="small")
+    with left:
+        st.button("Reveal", key="btn_reveal", on_click=_reveal, args=(i,))
+    with right:
+        if st.session_state.revealed[i]:
+            correct_letter = str(row["correct"]).strip().upper()
+            if st.session_state.answers[i] is None:
+                st.markdown("<span class='badge badge-info'>No answer selected</span>", unsafe_allow_html=True)
+            elif st.session_state.answers[i] == correct_letter:
+                st.markdown("<span class='badge badge-ok'>Correct</span>", unsafe_allow_html=True)
+            else:
+                st.markdown("<span class='badge badge-err'>Incorrect</span>", unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # Explanation (scrollable panel) only after reveal
+    # Explanation (scrollable) directly below the same row — no spacer "bubble" above it
     if st.session_state.revealed[i]:
         st.markdown("<div class='explain-panel'>", unsafe_allow_html=True)
         st.markdown(str(row["explanation"]), unsafe_allow_html=False)
