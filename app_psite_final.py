@@ -7,17 +7,18 @@ import streamlit as st
 
 st.set_page_config(page_title="PSITE", page_icon=None, layout="wide")
 
-# ================= CSS: tight layout + no clipping =================
+# ================= CSS (scroll fix + tight professional layout) =================
 st.markdown(
     """
     <style>
     :root { --card-bg:#ffffff; --card-border:#e6e8ec; --accent:#1d4ed8; --muted:#6b7280; }
 
-    /* Global spacing & overflow fixes */
+    /* Global scrolling & overflow fixes */
+    html, body { height: auto !important; overflow-y: auto !important; }
     .block-container { padding-top: 1.25rem !important; padding-bottom: 0.8rem !important; }
     [data-testid="stHorizontalBlock"] { overflow: visible !important; }
-    [data-testid="stAppViewContainer"] { overflow: visible !important; }
-    [data-testid="stMain"] { overflow: visible !important; }
+    [data-testid="stAppViewContainer"] { overflow-y: auto !important; }
+    [data-testid="stMain"] { overflow-y: auto !important; }
 
     /* Sticky header */
     .sticky-top {
@@ -44,14 +45,24 @@ st.markdown(
     .hdr-row { display: flex; gap: .5rem; justify-content: flex-end; align-items: center; flex-wrap: wrap; }
     .stButton>button { padding: 0.4rem 0.85rem; border-radius: 8px; line-height: 1.25; }
 
-    /* Card & content */
+    /* Question card & prompt */
     .q-card { background: var(--card-bg); border: 1px solid var(--card-border);
               border-radius: 12px; padding: 1rem; box-shadow: 0 1px 6px rgba(0,0,0,.04); }
     .q-prompt { border: 1px solid var(--card-border); background: #fafbfc; border-radius: 10px;
                 padding: 12px; margin: 6px 0 8px 0; }
     .q-actions-bottom { margin-top: 8px; }
 
-    /* Radios: compact, no label "bubble" space */
+    /* Explanation panel: scrollable */
+    .explain-panel {
+      max-height: 52vh;
+      overflow-y: auto;
+      padding: 8px 10px;
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      background: #fcfdff;
+    }
+
+    /* Radios: compact, no label bubble */
     div[role="radiogroup"] > label {
       padding: 6px 8px; border: 1px solid var(--card-border); border-radius: 8px; margin-bottom: 6px;
     }
@@ -60,7 +71,7 @@ st.markdown(
     .stDivider { margin: 8px 0 !important; }
     .stMarkdown p { margin-bottom: 0.35rem; }
 
-    /* Ensure first child in q-card doesn’t add mysterious top gap */
+    /* Prevent phantom top gap in question card */
     .q-card > div:first-child { margin-top: 0 !important; }
     </style>
     """,
@@ -70,7 +81,7 @@ st.markdown(
 REQUIRED_COLS = ["id","subject","stem","A","B","C","D","E","correct","explanation"]
 
 # ================= Dynamic topic discovery =================
-CSV_FOLDER = "data"  # set to "." if CSVs live next to app.py
+CSV_FOLDER = "data"
 
 def _pretty_name_from_filename(path: str) -> str:
     name = os.path.basename(path)
@@ -79,14 +90,13 @@ def _pretty_name_from_filename(path: str) -> str:
     return name.replace("_", " ").replace("-", " ").strip().title()
 
 def discover_topic_csvs(folder: str) -> dict:
-    """Return mapping { 'Pretty Subject Name': '/path/to/file.csv' } from folder/*.csv."""
     pattern = os.path.join(folder, "*.csv")
     files = glob.glob(pattern)
     mapping = {}
     for f in files:
         base = os.path.basename(f).lower()
         if base == "questions.csv":
-            continue  # keep fallback file out of the subject list
+            continue
         pretty = _pretty_name_from_filename(f)
         mapping[pretty] = f
     return dict(sorted(mapping.items(), key=lambda x: x[0].lower()))
@@ -106,121 +116,54 @@ def _read_csv_strict(path: str) -> pd.DataFrame:
     return df
 
 def _load_all_topics() -> pd.DataFrame:
-    notes, frames = [], []
+    frames = []
     for subj, csv_path in TOPIC_TO_CSV.items():
         try:
             df = _read_csv_strict(csv_path)
-        except Exception as e:
-            notes.append(f"• Skipped {os.path.basename(csv_path)}: {e}")
+            df = df[df["subject"] == subj]
+            frames.append(df)
+        except Exception:
             continue
-        bad = df["subject"] != subj
-        if bad.any():
-            removed = int(bad.sum())
-            df = df[~bad].copy()
-            if removed:
-                notes.append(f"• {os.path.basename(csv_path)}: removed {removed} mismatched row(s).")
-        frames.append(df)
-
     if not frames:
-        # try fallback combined file
-        for p in [os.path.join(CSV_FOLDER, "questions.csv"), "questions.csv"]:
-            if os.path.exists(p):
-                try:
-                    fb = _read_csv_strict(p)
-                    frames.append(fb)
-                    notes.append(f"• Loaded fallback '{p}' (no per-topic CSVs usable).")
-                    break
-                except Exception as e:
-                    notes.append(f"• Fallback '{p}' unreadable: {e}")
-        if not frames:
-            st.error("No topic CSVs found and no usable fallback 'questions.csv'.")
-            st.stop()
-
-    if notes:
-        with st.sidebar.expander("Data load notes", expanded=False):
-            for n in notes:
-                st.caption(n)
-
+        st.error("No valid CSVs found in 'data' folder.")
+        st.stop()
     df_all = pd.concat(frames, ignore_index=True)
     df_all = df_all.drop_duplicates(subset=["id"], keep="first").reset_index(drop=True)
     return df_all
 
 def load_questions_for_subjects(selected_subjects, random_all: bool) -> pd.DataFrame:
-    """Load either all topics (random mix) or only chosen subjects; safe fallbacks."""
     if random_all:
         return _load_all_topics()
-
-    frames, notes = [], []
-    if selected_subjects:
-        for subj in selected_subjects:
-            csv_path = TOPIC_TO_CSV.get(subj)
-            if not csv_path or not os.path.exists(csv_path):
-                notes.append(f"• Missing CSV for: {subj}")
-                continue
+    frames = []
+    for subj in selected_subjects:
+        csv_path = TOPIC_TO_CSV.get(subj)
+        if csv_path and os.path.exists(csv_path):
             try:
                 df = _read_csv_strict(csv_path)
-            except Exception as e:
-                notes.append(f"• Problem reading {csv_path}: {e}")
-                continue
-            bad = df["subject"] != subj
-            if bad.any():
-                removed = int(bad.sum())
-                df = df[~bad].copy()
-                if removed:
-                    notes.append(f"• {os.path.basename(csv_path)}: removed {removed} mismatched row(s).")
-            frames.append(df)
-
-    if selected_subjects and not frames:
-        for p in [os.path.join(CSV_FOLDER, "questions.csv"), "questions.csv"]:
-            if os.path.exists(p):
-                try:
-                    fb = _read_csv_strict(p)
-                    frames.append(fb)
-                    notes.append(f"• Loaded fallback '{p}' because no subject CSVs were usable.")
-                    break
-                except Exception as e:
-                    notes.append(f"• Fallback '{p}' unreadable: {e}")
-        if not frames:
-            st.error("No valid subject CSVs found and no usable fallback 'questions.csv'.")
-            st.stop()
-
-    if not selected_subjects and not frames:
+                df = df[df["subject"] == subj]
+                frames.append(df)
+            except Exception:
+                pass
+    if not frames:
         return pd.DataFrame(columns=REQUIRED_COLS)
-
-    if notes:
-        with st.sidebar.expander("Data load notes", expanded=False):
-            for n in notes:
-                st.caption(n)
-
     df_all = pd.concat(frames, ignore_index=True)
     df_all = df_all.drop_duplicates(subset=["id"], keep="first").reset_index(drop=True)
     return df_all
 
 # ================= Quiz helpers / UI =================
-def validate_df(df: pd.DataFrame) -> List[str]:
-    return [c for c in REQUIRED_COLS if c not in df.columns]
-
 def init_session_state(n:int):
     st.session_state.answers = [None]*n
     st.session_state.revealed = [False]*n
     st.session_state.current = 0
     st.session_state.finished = False
 
-# Navigation callbacks (constant keys avoid double-click)
 def _go_prev(n: int):
     st.session_state.current = max(st.session_state.current - 1, 0)
-
 def _go_next(n: int):
     st.session_state.current = min(st.session_state.current + 1, n - 1)
-
-def _skip(n: int):
-    _go_next(n)
-
-def _finish():
-    st.session_state.finished = True
-
-def _reveal(i: int):
-    st.session_state.revealed[i] = True
+def _skip(n: int): _go_next(n)
+def _finish(): st.session_state.finished = True
+def _reveal(i: int): st.session_state.revealed[i] = True
 
 def render_header(n:int, title_text: str):
     pos = st.session_state.current
@@ -228,25 +171,18 @@ def render_header(n:int, title_text: str):
     st.markdown("<div class='sticky-top'>", unsafe_allow_html=True)
 
     left, right = st.columns([6,6])
-
     with left:
         st.markdown(f"<div class='top-title'>{title_text}</div>", unsafe_allow_html=True)
         st.markdown(f"<div class='q-progress'><div style='width:{pct}%'></div></div>", unsafe_allow_html=True)
         st.caption(f"Question {pos+1} of {n}")
-
     with right:
         st.markdown("<div class='hdr-row'>", unsafe_allow_html=True)
         c1, c2, c3, c4 = st.columns([1,1,1,1])
-        with c1:
-            st.button("Previous", key="hdr_prev", on_click=_go_prev, args=(n,), disabled=(pos == 0))
-        with c2:
-            st.button("Next",     key="hdr_next", on_click=_go_next, args=(n,), disabled=(pos == n-1))
-        with c3:
-            st.button("Skip",     key="hdr_skip", on_click=_skip,    args=(n,), disabled=(pos == n-1))
-        with c4:
-            st.button("Finish",   key="hdr_finish", on_click=_finish)
+        with c1: st.button("Previous", key="hdr_prev", on_click=_go_prev, args=(n,), disabled=(pos == 0))
+        with c2: st.button("Next", key="hdr_next", on_click=_go_next, args=(n,), disabled=(pos == n-1))
+        with c3: st.button("Skip", key="hdr_skip", on_click=_skip, args=(n,), disabled=(pos == n-1))
+        with c4: st.button("Finish", key="hdr_finish", on_click=_finish)
         st.markdown("</div>", unsafe_allow_html=True)
-
     st.markdown("</div>", unsafe_allow_html=True)
 
 def render_question(pool: pd.DataFrame):
@@ -255,11 +191,8 @@ def render_question(pool: pd.DataFrame):
     row = pool.iloc[i]
 
     st.markdown("<div class='q-card'>", unsafe_allow_html=True)
-
-    # Stem in compact "textbox"
     st.markdown(f"<div class='q-prompt'>{str(row['stem'])}</div>", unsafe_allow_html=True)
 
-    # Choices: no label, collapsed visibility => no empty bubble
     letters = ["A","B","C","D","E"]
     fmt = lambda L: str(row[L])
     selected = st.radio(
@@ -273,9 +206,8 @@ def render_question(pool: pd.DataFrame):
     st.session_state.answers[i] = selected
 
     st.divider()
-
-    # Only Reveal is at the bottom
     st.button("Reveal", key="btn_reveal", on_click=_reveal, args=(i,))
+
     if st.session_state.revealed[i]:
         correct_letter = str(row["correct"]).strip().upper()
         st.divider()
@@ -285,7 +217,11 @@ def render_question(pool: pd.DataFrame):
             st.success("Correct")
         else:
             st.error("Incorrect")
-        st.info(str(row["explanation"]))
+
+        # Scrollable explanation
+        st.markdown("<div class='explain-panel'>", unsafe_allow_html=True)
+        st.markdown(str(row["explanation"]), unsafe_allow_html=False)
+        st.markdown("</div>", unsafe_allow_html=True)
 
     st.markdown("</div>", unsafe_allow_html=True)
 
@@ -299,9 +235,9 @@ def render_results(pool: pd.DataFrame):
     total_revealed = sum(1 for r in revealed if r)
     st.markdown("## Results")
     cols = st.columns(3)
-    with cols[0]: st.markdown(f"<div class='stat'><div class='q-subtle'>Answered</div><h3>{total_revealed}/{n}</h3></div>", unsafe_allow_html=True)
-    with cols[1]: st.markdown(f"<div class='stat'><div class='q-subtle'>Correct</div><h3>{total_correct}/{n}</h3></div>", unsafe_allow_html=True)
-    with cols[2]: st.markdown(f"<div class='stat'><div class='q-subtle'>Score</div><h3>{int(100*total_correct/max(n,1))}%</h3></div>", unsafe_allow_html=True)
+    with cols[0]: st.metric("Answered", f"{total_revealed}/{n}")
+    with cols[1]: st.metric("Correct", f"{total_correct}/{n}")
+    with cols[2]: st.metric("Score", f"{int(100*total_correct/max(n,1))}%")
 
     df = pool.copy()
     df["user_answer"] = answers
@@ -335,16 +271,13 @@ with st.sidebar:
     pick_subjects = st.multiselect("Subject", SUBJECT_OPTIONS, disabled=random_all)
 
     df = load_questions_for_subjects(pick_subjects, random_all=random_all)
-
     total = len(df)
     min_q = 1 if total >= 1 else 0
     max_q = total if total >= 1 else 1
     default_q = min(20, max_q) if max_q >= 1 else 1
     step_q = 1 if max_q < 10 else 5
 
-    n_questions = st.number_input(
-        "Number of Questions", min_value=min_q, max_value=max_q, step=step_q, value=default_q
-    )
+    n_questions = st.number_input("Number of Questions", min_value=min_q, max_value=max_q, step=step_q, value=default_q)
 
     if st.button("Start ▶", key="btn_start"):
         if df.empty:
@@ -364,7 +297,6 @@ if pool is None:
     st.write("Use the sidebar to start a quiz.")
     st.stop()
 
-# Header title: chosen subjects or Random Mix
 sel_subjects = st.session_state.get("selected_subjects", [])
 random_all = st.session_state.get("random_all", False)
 title_text = "Random Mix" if random_all else (", ".join(sel_subjects) if sel_subjects else "PSITE")
