@@ -7,7 +7,7 @@ import streamlit as st
 
 st.set_page_config(page_title="PSITE", page_icon=None, layout="wide")
 
-# ================= CSS (no spacer under Reveal + clean layout) =================
+# ================= CSS: no spacer under Reveal, minimal verdict, tight UI =================
 st.markdown(
     """
     <style>
@@ -15,10 +15,9 @@ st.markdown(
 
     /* Global scrolling & overflow fixes */
     html, body { height: auto !important; overflow-y: auto !important; }
-    .block-container { padding-top: 1.25rem !important; padding-bottom: 0.8rem !important; }
+    .block-container { padding-top: 1.1rem !important; padding-bottom: 0.8rem !important; }
     [data-testid="stHorizontalBlock"] { overflow: visible !important; }
-    [data-testid="stAppViewContainer"] { overflow-y: auto !important; }
-    [data-testid="stMain"] { overflow-y: auto !important; }
+    [data-testid="stAppViewContainer"], [data-testid="stMain"] { overflow-y: auto !important; }
 
     /* Sticky header */
     .sticky-top {
@@ -33,41 +32,39 @@ st.markdown(
     .q-progress { height: 6px; background:#eef0f3; border-radius: 999px; overflow: hidden; margin: 0 0 4px 0; }
     .q-progress > div { height:100%; background: var(--accent); width:0%; transition: width .25s ease; }
 
-    /* Header buttons row */
+    /* Header controls */
     .hdr-row { display: flex; gap: .5rem; justify-content: flex-end; align-items: center; flex-wrap: wrap; }
     .stButton>button { padding: 0.4rem 0.85rem; border-radius: 8px; line-height: 1.25; }
 
-    /* Flatten outer container; only stem bubble visible */
+    /* Flat outer container, only the stem uses a soft bubble */
     .q-card { border: none; background: transparent; padding: 0; box-shadow: none; }
     .q-prompt { border: 1px solid var(--card-border); background: #fafbfc; border-radius: 10px;
                 padding: 12px; margin: 0 0 8px 0; }
 
-    /* Answer choices: no bubbles, subtle hover */
+    /* Choices: clean list, no bubbles */
     div[role="radiogroup"] > label {
       border: none !important; background: transparent !important;
-      padding: 6px 4px !important; margin-bottom: 4px !important; border-radius: 6px;
+      padding: 6px 4px !important; margin: 2px 0 !important; border-radius: 6px;
       transition: background-color .15s ease;
     }
     div[role="radiogroup"] > label:hover { background: #f5f7fb !important; }
     div[role="radiogroup"] input:checked + div > p { text-decoration: underline; text-underline-offset: 3px; }
-    .stRadio div[role="radiogroup"] { gap: 2px !important; }
+    .stRadio div[role="radiogroup"] { gap: 0 !important; }
 
-    /* Reveal row (button + verdict inline) — NO extra margins */
+    /* Reveal row: button + minimal verdict inline; NO bottom margin */
     .q-actions-row { display: flex; align-items: center; gap: .6rem; margin: 0; }
     .verdict {
-      display: inline-flex; align-items: center; gap: .45rem; font-weight: 500;
-      padding: .35rem .6rem; border-radius: 8px; border: 1px solid; white-space: nowrap;
+      display: inline-flex; align-items: center; gap: .4rem;
+      font-weight: 600; padding: .25rem .55rem; border-radius: 999px; white-space: nowrap;
     }
-    .verdict-ok  { background: #ecfdf5; border-color: #a7f3d0; color: #065f46; }
-    .verdict-err { background: #fef2f2; border-color: #fecaca; color: #7f1d1d; }
-    .verdict-info{ background: #eff6ff; border-color: #bfdbfe; color: #1e40af; }
-    .verdict .sym { font-size: 1rem; }
+    .verdict-ok  { background: #10b9811a; color: #065f46; border: 1px solid #34d399; }
+    .verdict-err { background: #ef44441a; color: #7f1d1d; border: 1px solid #fca5a5; }
 
-    /* Explanation panel — NO top margin (touches Reveal row) */
+    /* Explanation panel: directly abuts Reveal row */
     .explain-panel {
       max-height: 52vh; overflow-y: auto; padding: 10px 12px;
       border: 1px solid var(--card-border); border-radius: 10px; background: #fcfdff;
-      margin-top: 0;   /* <—— removed spacer */
+      margin-top: -2px;   /* eat any residual Streamlit spacer between widgets */
     }
 
     .stDivider { margin: 8px 0 !important; }
@@ -95,7 +92,7 @@ def discover_topic_csvs(folder: str) -> dict:
     for f in files:
         base = os.path.basename(f).lower()
         if base == "questions.csv":
-            continue  # keep fallback out of list
+            continue
         pretty = _pretty_name_from_filename(f)
         mapping[pretty] = f
     return dict(sorted(mapping.items(), key=lambda x: x[0].lower()))
@@ -156,11 +153,9 @@ def init_session_state(n:int):
     st.session_state.current = 0
     st.session_state.finished = False
 
-# Nav callbacks (constant keys avoid double-click)
-def _go_prev(n: int):
-    st.session_state.current = max(st.session_state.current - 1, 0)
-def _go_next(n: int):
-    st.session_state.current = min(st.session_state.current + 1, n - 1)
+# Nav callbacks
+def _go_prev(n: int): st.session_state.current = max(st.session_state.current - 1, 0)
+def _go_next(n: int): st.session_state.current = min(st.session_state.current + 1, n - 1)
 def _skip(n: int): _go_next(n)
 def _finish(): st.session_state.finished = True
 def _reveal(i: int): st.session_state.revealed[i] = True
@@ -189,26 +184,22 @@ def render_question(pool: pd.DataFrame):
     i = st.session_state.current
     row = pool.iloc[i]
 
-    # Outer container
     st.markdown("<div class='q-card'>", unsafe_allow_html=True)
 
-    # Question stem (single subtle bubble)
+    # Question stem
     st.markdown(f"<div class='q-prompt'>{str(row['stem'])}</div>", unsafe_allow_html=True)
 
-    # Choices: clean list (no label bubble)
+    # Answer choices (no bubbles)
     letters = ["A","B","C","D","E"]
     fmt = lambda L: str(row[L])
     selected = st.radio(
-        label="",
-        options=letters,
-        format_func=fmt,
+        label="", options=letters, format_func=fmt,
         index=(letters.index(st.session_state.answers[i]) if st.session_state.answers[i] in letters else None),
-        label_visibility="collapsed",
-        key="radio_choice"
+        label_visibility="collapsed", key="radio_choice"
     )
     st.session_state.answers[i] = selected
 
-    # Reveal row — NO divider, NO margins; verdict inline
+    # Reveal row: minimal verdict inline; NO divider; explanation snaps right below
     st.markdown("<div class='q-actions-row'>", unsafe_allow_html=True)
     col_btn, col_v = st.columns([1,6], gap="small")
     with col_btn:
@@ -216,26 +207,15 @@ def render_question(pool: pd.DataFrame):
     with col_v:
         if st.session_state.revealed[i]:
             correct_letter = str(row["correct"]).strip().upper()
-            correct_text = str(row.get(correct_letter, ""))
-            if st.session_state.answers[i] is None:
-                verdict = "<span class='verdict verdict-info'><span class='sym'>ℹ️</span> No answer selected</span>"
-            elif st.session_state.answers[i] == correct_letter:
-                verdict = (
-                    f"<span class='verdict verdict-ok'><span class='sym'>✅</span>"
-                    f"Correct — Answer: {correct_letter}. {correct_text}</span>"
-                )
+            if st.session_state.answers[i] == correct_letter:
+                verdict = "<span class='verdict verdict-ok'>Correct</span>"
             else:
-                chosen = st.session_state.answers[i]
-                chosen_text = str(row.get(chosen, ""))
-                verdict = (
-                    f"<span class='verdict verdict-err'><span class='sym'>❌</span>"
-                    f"Incorrect — You chose {chosen}. {chosen_text} &nbsp;•&nbsp; "
-                    f"Correct: {correct_letter}. {correct_text}</span>"
-                )
+                # Handles None or wrong selection the same (per your request: minimal text)
+                verdict = "<span class='verdict verdict-err'>Incorrect</span>"
             st.markdown(verdict, unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # Explanation panel — sits directly under the Reveal row (no spacer)
+    # Explanation panel — directly adjacent (no spacer)
     if st.session_state.revealed[i]:
         st.markdown("<div class='explain-panel'>", unsafe_allow_html=True)
         st.markdown(str(row["explanation"]), unsafe_allow_html=False)
@@ -256,17 +236,6 @@ def render_results(pool: pd.DataFrame):
     with cols[0]: st.metric("Answered", f"{total_revealed}/{n}")
     with cols[1]: st.metric("Correct", f"{total_correct}/{n}")
     with cols[2]: st.metric("Score", f"{int(100*total_correct/max(n,1))}%")
-
-    df = pool.copy()
-    df["user_answer"] = answers
-    df["revealed"] = revealed
-    review = []
-    for i,row in df.iterrows():
-        if row["revealed"]:
-            review.append([i+1, str(row["stem"])[:140]+"…", row["user_answer"], str(row["correct"]).upper()])
-    if review:
-        st.markdown("### Review")
-        st.dataframe(pd.DataFrame(review, columns=["#","stem","user_answer","correct"]), use_container_width=True)
 
     st.download_button(
         "Export Progress (.json)",
