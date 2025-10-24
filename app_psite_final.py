@@ -175,4 +175,89 @@ def render_question(pool: pd.DataFrame):
     i = st.session_state.current
     row = pool.iloc[i]
     st.markdown("<div class='q-card'>", unsafe_allow_html=True)
-    st.markdown(f"<div class='q-prompt'>{row['stem']}</
+    st.markdown(f"<div class='q-prompt'>{row['stem']}</div>", unsafe_allow_html=True)
+
+    letters = ["A","B","C","D","E"]
+    fmt = lambda L: str(row[L])
+    selected = st.radio(
+        label="", options=letters, format_func=fmt,
+        index=(letters.index(st.session_state.answers[i]) if st.session_state.answers[i] in letters else None),
+        label_visibility="collapsed", key=f"radio_choice_{i}"
+    )
+    st.session_state.answers[i] = selected
+
+    st.markdown("<div class='q-actions-row'>", unsafe_allow_html=True)
+    col_btn,col_v = st.columns([1,6], gap="small")
+    with col_btn:
+        st.button("Reveal", key=f"btn_reveal_{i}", on_click=_reveal, args=(i,))
+    with col_v:
+        if st.session_state.revealed[i]:
+            correct = row["correct"].strip().upper()
+            verdict = "<span class='verdict verdict-ok'>Correct</span>" if selected == correct else "<span class='verdict verdict-err'>Incorrect</span>"
+            st.markdown(verdict, unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    if st.session_state.revealed[i]:
+        st.markdown("<div class='explain-plain'>", unsafe_allow_html=True)
+        st.markdown(row["explanation"], unsafe_allow_html=False)
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    st.markdown("</div>", unsafe_allow_html=True)
+
+def render_results(pool: pd.DataFrame):
+    n = len(pool)
+    answers = st.session_state.answers
+    revealed = st.session_state.revealed
+    correct_letters = [str(x).strip().upper() for x in pool["correct"]]
+    is_correct = [a == c and a is not None and r for a,c,r in zip(answers, correct_letters, revealed)]
+    total_correct = sum(is_correct)
+    total_revealed = sum(1 for r in revealed if r)
+    st.markdown("## Results")
+    cols = st.columns(3)
+    with cols[0]: st.metric("Answered", f"{total_revealed}/{n}")
+    with cols[1]: st.metric("Correct", f"{total_correct}/{n}")
+    with cols[2]: st.metric("Score", f"{int(100*total_correct/max(n,1))}%")
+    if st.button("Restart"):
+        init_session_state(len(pool))
+
+with st.sidebar:
+    st.header("Build Quiz")
+    if not SUBJECT_OPTIONS:
+        st.error(f"No subjects found in '{CSV_FOLDER}'. Ensure CSVs have a 'subject' column.")
+        st.stop()
+
+    random_all = st.toggle("Random from all topics", value=False)
+    pick_subjects = st.multiselect("Subject", SUBJECT_OPTIONS, disabled=random_all)
+    df = load_questions_for_subjects(pick_subjects, random_all=random_all)
+
+    total = len(df)
+    min_q = 1 if total >= 1 else 0
+    max_q = total if total >= 1 else 1
+    default_q = min(20, max_q)
+    step_q = 1 if max_q < 10 else 5
+    n_questions = st.number_input("Number of Questions", min_value=min_q, max_value=max_q, step=step_q, value=default_q)
+
+    if st.button("Start ▶"):
+        if df.empty:
+            st.warning("No questions available.")
+        else:
+            pool = df.sample(n=int(n_questions), random_state=42).reset_index(drop=True)
+            st.session_state.pool = pool
+            init_session_state(len(pool))
+            st.session_state.random_all = random_all
+            st.session_state.selected_subjects = pick_subjects
+
+pool = st.session_state.get("pool", None)
+if pool is None:
+    st.write("Use the sidebar to start a quiz.")
+    st.stop()
+
+sel_subjects = st.session_state.get("selected_subjects", [])
+random_all = st.session_state.get("random_all", False)
+title_text = "Random Mix" if random_all else (", ".join(sel_subjects) if sel_subjects else "PSITE")
+
+render_header(len(pool), title_text)
+if st.session_state.finished:
+    render_results(pool)
+else:
+    render_question(pool)
