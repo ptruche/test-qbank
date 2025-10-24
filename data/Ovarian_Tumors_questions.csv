@@ -1,0 +1,212 @@
+"id","subject","stem","A","B","C","D","E","correct","explanation"
+"01","Ovarian_Tumors","A 14-year-old girl presents with 2 days of right lower quadrant pain without fever or GI symptoms. Pelvic ultrasound shows a 5-cm enlarged echogenic right ovary; Doppler is “suspicious for torsion.” There is no discrete hemorrhagic cyst. Question type: What is the next best step in management?","Admit for analgesia and serial ultrasounds; operate only if pain worsens","Begin combined oral contraceptives to suppress cyst formation","Proceed to diagnostic laparoscopy with possible detorsion and staging","Obtain CT abdomen/pelvis to better assess for appendicitis","","C","Correct answer: C — Proceed to diagnostic laparoscopy with possible detorsion and staging.
+
+Ovarian torsion is difficult to confirm (or exclude) on ultrasound; an enlarged ovary with acute pain warrants laparoscopic exploration when torsion cannot be ruled out. The chapter emphasizes that torsion “cannot be ruled out and laparoscopic exploration is indicated.” fileciteturn1file1L17-L21 
+
+Why the others are wrong:
+• A: Expectant management risks ovarian loss if torsion is present; nonoperative care is appropriate only for discrete hemorrhagic/ruptured cysts with clear sonographic diagnosis. fileciteturn1file1L18-L21 
+• B: OCPs are not a treatment for acute torsion and are not evidence-based for preventing functional cysts in this setting. fileciteturn1file0L11-L19 
+• D: CT adds little for torsion and delays definitive management.
+
+Diagnostic algorithm (high-yield): acute pelvic pain + enlarged ovary → cannot exclude torsion → prompt laparoscopy; if discrete hemorrhagic cyst and stable → outpatient follow-up with repeat ultrasound.
+
+Bottom Line/High Yield:
+• Ultrasound cannot reliably exclude torsion.
+• If torsion cannot be ruled out, proceed to laparoscopy.
+• Nonoperative care is reserved for clearly identified hemorrhagic/ruptured cysts."
+"02","Ovarian_Tumors","A 13-year-old girl with a 7-cm complex ovarian mass is scheduled for operative management later today. Question type: What is the next best step in the preoperative workup?","No additional workup; tumor markers do not alter management","Order serum AFP, hCG, and CA-125 before surgery","Obtain serum inhibin only","Delay surgery for 48 hours to await tumor marker results","","B","Correct answer: B — Order serum AFP, hCG, and CA-125 before surgery.
+
+Baseline tumor markers should be obtained for presumed ovarian masses: AFP (yolk sac), hCG (choriocarcinoma), and CA-125 (epithelial; can be elevated in germ cell tumors). Results are often available rapidly and should not delay surgery; if immediate results are impossible, levels should still be drawn preoperatively. fileciteturn1file1L26-L32 
+
+Why the others are wrong:
+• A: Markers strongly influence operative planning (e.g., ovarian-sparing vs. en bloc resection). fileciteturn1file3L1-L7 
+• C: Inhibin is useful for granulosa cell tumors but is not the standard screening panel for undifferentiated adnexal masses. fileciteturn1file0L11-L18 
+• D: Do not delay necessary surgery for markers; draw them but proceed as indicated. fileciteturn1file1L29-L32 
+
+Workup framework: pregnancy test as appropriate → ultrasound; if mass suspected, obtain AFP, hCG, CA‑125 → plan approach balancing oncologic control and ovarian preservation.
+
+Bottom Line/High Yield:
+• Always draw AFP, hCG, CA‑125 before ovarian mass surgery.
+• Do not delay time-sensitive operations to await results.
+• Elevated AFP or hCG argues against ovarian-sparing resection."
+"03","Ovarian_Tumors","During laparoscopy for an adnexal mass in a 15-year-old, no torsion is seen. Question type: What are the essential intraoperative staging tasks?","Visualize only the ipsilateral ovary and proceed directly to cystectomy","Inspect liver, diaphragm, omentum, peritoneal surfaces; assess iliac nodes; obtain peritoneal washings","Avoid peritoneal washings to reduce tumor spillage","Perform bilateral oophorectomy to avoid recurrence","","B","Correct answer: B — Inspect liver/diaphragm/omentum/peritoneal surfaces, assess iliac nodes, and send peritoneal washings.
+
+The chapter details these core staging steps during laparoscopy for adnexal masses. fileciteturn1file2L14-L18 
+
+Why the others are wrong:
+• A: Limited inspection risks understaging. fileciteturn1file2L14-L18 
+• C: Peritoneal washings are recommended as part of staging. fileciteturn1file2L17-L18 
+• D: Routine bilateral oophorectomy is inappropriate in pediatric patients given low malignancy rates and fertility considerations. fileciteturn1file4L1-L8 
+
+Technique notes: Use atraumatic handling; bag any specimens; avoid spill; document surfaces carefully.
+
+Bottom Line/High Yield:
+• Comprehensive inspection + washings are standard.
+• Preserve ovarian tissue when oncologically safe.
+• Understaging risks recurrence/metastasis."
+"04","Ovarian_Tumors","A 14-year-old undergoing laparoscopy for suspected torsion has a grossly enlarged right ovary but no discrete mass, normal markers, and no extraovarian disease. Question type: What is the most appropriate intraoperative decision?","Right oophorectomy to prevent missed malignancy","Blind incision of the capsule and attempt at enucleation","Terminate procedure and plan serial imaging","Peritonealization of the ovary to reduce cyst formation","","C","Correct answer: C — Terminate the procedure and follow with serial imaging.
+
+With normal markers, no discrete lesion, and no evidence of spread, a conservative ovarian-sparing strategy is favored; blind enucleation risks parenchymal injury without benefit. The text recommends terminating and following with imaging. fileciteturn1file2L67-L75 
+
+Why the others are wrong:
+• A: Oophorectomy is not indicated without clear evidence of malignancy. fileciteturn1file2L67-L74 
+• B: “Essentially blind” enucleation is discouraged. fileciteturn1file2L73-L75 
+• D: Peritonealization does not address the clinical problem and is not discussed as a management strategy.
+
+Surgical principle: Pediatric ovarian malignancy is uncommon; maximize preservation while maintaining oncologic safety. fileciteturn1file4L1-L8 
+
+Bottom Line/High Yield:
+• Avoid oophorectomy when markers/imaging favor benign disease.
+• Do not blindly enucleate without a definable mass.
+• Use structured follow-up imaging."
+"05","Ovarian_Tumors","A 14-year-old has persistent right ovarian enlargement 4 weeks after laparoscopy; ultrasound remains nonspecific. Question type: What is the best next diagnostic test?","Pelvic MRI to characterize the lesion and delineate fat/cystic components","Repeat CT scan to look for calcifications (“teeth”)","Serum CA 19-9 level","Diagnostic percutaneous ovarian biopsy","","A","Correct answer: A — Pelvic MRI.
+
+MRI distinguishes functional vs neoplastic masses and delineates borders and components (fat/cystic), clearly identifying teratomas and other tumors; it is recommended after inconclusive ultrasound in a symptomatic patient. fileciteturn1file2L77-L80 
+
+Why the others are wrong:
+• B: CT may show calcifications but offers less soft-tissue characterization than MRI for ovarian lesions in adolescents and exposes to radiation.
+• C: CA 19-9 can be helpful for mucinous epithelial tumors but is not a first-line next test here. fileciteturn1file0L1-L9 
+• D: Percutaneous biopsy risks spill and is generally avoided for resectable ovarian masses; proceed with definitive surgical planning once characterized.
+
+Algorithm: US equivocal/persistent symptoms → MRI; if teratoma features → ovarian-sparing enucleation when feasible.
+
+Bottom Line/High Yield:
+• MRI is the preferred problem-solver after equivocal US.
+• Identifies fat/cystic elements typical of teratoma.
+• Guides ovarian-sparing operative planning."
+"06","Ovarian_Tumors","A 13-year-old with MRI-defined 3.5-cm mature teratoma undergoes planned resection. Question type: What is the most appropriate operative approach?","Pfannenstiel minilaparotomy with careful capsulotomy and enucleation to avoid spill","Routine salpingo-oophorectomy to reduce recurrence risk","Laparoscopic biopsy followed by observation","Cyst aspiration and cauterization of the cavity","","A","Correct answer: A — Pfannenstiel minilaparotomy with deliberate, spill-avoiding enucleation.
+
+The author favors minilaparotomy for tactile evaluation and controlled, ovarian-sparing enucleation while minimizing spill; spillage of glial elements may lead to benign recurrences, and malignant spill may upstage. fileciteturn1file2L71-L75 fileciteturn1file3L20-L25 
+
+Why the others are wrong:
+• B: Most teratomas are benign; ovarian preservation is recommended when oncologically safe. fileciteturn1file4L1-L8 
+• C: Biopsy alone is not definitive therapy and risks spill.
+• D: Aspiration/cauterization is not definitive oncologic treatment and risks chemical peritonitis/spread.
+
+Technique (overview): transverse Pfannenstiel; protect field; open capsule over tumor; blunt/sharp dissection to shell the mass (“like enucleating a yolk”); hemostasis; reconstruct ovary; bag specimen.
+
+Bottom Line/High Yield:
+• Favor ovarian-sparing enucleation for benign-appearing teratomas.
+• Minimize spill; bag the specimen.
+• Oophorectomy is not routine in pediatric patients."
+"07","Ovarian_Tumors","A 12-year-old has an adnexal mass with imaging consistent with teratoma, but AFP is elevated and hCG is normal. Question type: What is the most appropriate surgical strategy?","Ovarian-sparing cystectomy/enucleation","Oophorectomy with measures to minimize intraperitoneal spill","Observation with repeat markers in 6 weeks","Percutaneous needle biopsy to confirm histology","","B","Correct answer: B — Oophorectomy with measures to minimize spill.
+
+Any teratoma associated with elevated AFP is considered to have a yolk sac (malignant) component and should not undergo ovarian-sparing surgery; select an approach that minimizes spill. fileciteturn1file3L1-L7 
+
+Why the others are wrong:
+• A: Elevated AFP precludes ovarian-sparing surgery. fileciteturn1file4L61-L65 
+• C: Delaying definitive therapy risks progression.
+• D: Needle biopsy risks spill and is not necessary for resectable adnexal tumors.
+
+High-yield marker interpretation:
+• AFP↑ → suspect yolk sac component; avoid ovarian-sparing.
+• hCG↑ → suspect choriocarcinoma component.
+• CA‑125 may be elevated in epithelial and some germ cell tumors.
+
+Bottom Line/High Yield:
+• Elevated AFP or hCG argues against ovarian-sparing resection.
+• Plan en bloc removal while minimizing spill."
+"08","Ovarian_Tumors","A 10-year-old undergoes resection of an immature teratoma, grade 3, confined to the ovary; markers are normal postoperatively. Question type: What is the most appropriate postoperative management?","Adjuvant platinum-based chemotherapy","Surveillance only, as surgery alone is adequate in girls with stage I disease","Pelvic radiation therapy","Second-look laparoscopy in 6 weeks","","B","Correct answer: B — Surveillance only.
+
+In girls, immaturity grade (0–3) does not significantly affect outcomes; surgery alone is adequate for high‑grade immature teratoma or stage I malignant germ cell tumors, with chemotherapy reserved for recurrences. fileciteturn1file3L9-L18 
+
+Why the others are wrong:
+• A: Routine adjuvant chemotherapy is not indicated for stage I immature teratoma in children. fileciteturn1file3L16-L18 
+• C: Radiation has no role.
+• D: Second-look laparoscopy is not standard in completely resected stage I disease.
+
+Pathology/staging notes: Grade by immature neuroepithelial content (0–3). Perform washings and peritoneal/omental inspection; biopsy suspicious lesions. fileciteturn1file3L20-L25 
+
+Bottom Line/High Yield:
+• Stage I immature teratoma → surgery alone, surveillance.
+• Recurrences are typically salvageable with chemotherapy."
+"09","Ovarian_Tumors","A 15-year-old undergoes ovarian-sparing resection of a mature cystic teratoma with normal preoperative markers. Question type: What is the most appropriate follow-up strategy?","No follow-up is necessary after complete excision","Annual pelvic MRI and tumor markers indefinitely","Ultrasound at 6 months, then yearly until adulthood; tumor markers not useful if normal preoperatively","Prophylactic contralateral oophorectomy due to high metachronous risk","","C","Correct answer: C — Ultrasound at 6 months, then yearly; markers are not useful if not elevated pre-op.
+
+Mature teratomas have low recurrence risk, but a metachronous contralateral teratoma can occur (~10–20% at 10 years). The chapter describes a pragmatic follow-up approach with ultrasound at 6 months and annually thereafter; repeat markers are not useful when not elevated preoperatively. fileciteturn1file1L26-L32 fileciteturn1file4L1-L8 
+
+Why the others are wrong:
+• A: Follow-up is advised due to metachronous risk.
+• B: MRI is not required for routine surveillance; markers are unhelpful if initially normal.
+• D: Prophylactic oophorectomy is not indicated.
+
+Bottom Line/High Yield:
+• Mature teratoma → US at 6 months, then annually.
+• Metachronous contralateral teratoma risk ≈10–20% at 10 years.
+• Repeat markers are unnecessary if not elevated pre-op."
+"10","Ovarian_Tumors","A 15-year-old with a giant multiloculated cystic ovarian mass has normal AFP/hCG/CA‑125 but elevated CA 19‑9. Question type: Which statement best reflects appropriate management and interpretation?","Borderline mucinous tumors are treated with chemotherapy; tumor markers are not helpful","CA 19-9 elevation can accompany mucinous epithelial tumors; removal via laparotomy with controlled aspiration is reasonable; follow with serial CA 19-9","CA 19-9 elevation mandates bilateral oophorectomy","FIGO staging is irrelevant in adolescents and should be omitted","","B","Correct answer: B — CA 19‑9 can be elevated in mucinous tumors; controlled aspiration with removal via laparotomy is described, and postoperative surveillance can include CA 19‑9.
+
+The chapter’s mucinous case showed elevated CA 19‑9, controlled aspiration to facilitate removal, and borderline histology; the patient was followed clinically with ultrasound and CA 19‑9 monitoring. fileciteturn1file0L1-L9 
+
+Why the others are wrong:
+• A: Borderline tumors are not treated with chemotherapy by default.
+• C: Bilateral oophorectomy is not indicated solely for marker elevation.
+• D: FIGO epithelial tumor staging (omentectomy/lymph node sampling) is recommended when epithelial malignancy is suspected, though pediatric relevance is evolving. fileciteturn1file0L11-L19 
+
+Bottom Line/High Yield:
+• CA 19‑9 may be elevated in mucinous epithelial tumors.
+• Borderline mucinous tumors are managed surgically with fertility preservation.
+• Consider FIGO staging principles when malignancy is suspected."
+"11","Ovarian_Tumors","An 8-year-old presents with breast development and episodic vaginal bleeding; exam reveals a large adnexal mass. Markers: AFP/hCG/CA‑125 normal; inhibin elevated. Question type: What additional statement is most accurate?","This tumor rarely causes hormonal symptoms; precocious puberty suggests hCG-secreting choriocarcinoma","Granulosa cell tumors commonly present with isosexual pseudoprecocious puberty; inhibin is a useful marker; platinum-based chemotherapy is recommended for tumors with rupture or extraovarian spread","Granulosa cell tumors are usually benign teratomas; ovarian-sparing cystectomy is standard regardless of spread","Postoperative radiation improves survival in localized disease","","B","Correct answer: B — Granulosa cell tumors frequently cause estrogen-driven pseudoprecocious puberty; inhibin is a useful marker; platinum-based chemotherapy is recommended for rupture or disease beyond the ovary.
+
+The chapter details epidemiology, hormonal presentation, and treatment principles for sex cord–stromal (granulosa) tumors. fileciteturn1file0L11-L19 
+
+Why the others are wrong:
+• A: Hormonal symptoms are typical of granulosa tumors; hCG elevation characterizes choriocarcinoma components of germ cell tumors.
+• C: Granulosa tumors are not teratomas; management depends on stage/biology; extraovarian disease warrants chemotherapy. fileciteturn1file0L18-L19 
+• D: Radiation is not part of standard management.
+
+Bottom Line/High Yield:
+• Precocious puberty + adnexal mass → think granulosa cell tumor.
+• Inhibin is a key marker.
+• Chemo for rupture or extraovarian spread."
+"12","Ovarian_Tumors","A 15-year-old undergoes resection of a ruptured immature teratoma; peritoneal biopsies later reveal mature glial nodules in the cul-de-sac. Question type: What is the most accurate statement regarding staging and management?","Findings represent metastatic malignant disease requiring chemotherapy","This is gliomatosis peritonei; it does not upstage the tumor and is thought to arise from metaplasia of submesothelial cells","This indicates malignant transformation to embryonal carcinoma","Immediate reoperation for complete peritoneal stripping is required","","B","Correct answer: B — Gliomatosis peritonei is a benign condition of mature glial implants that does not upstage the tumor; implants likely arise from teratoma-induced metaplasia of submesothelial cells.
+
+The chapter’s case describes ruptured immature teratoma with glial implants and later a benign neuroglial mass; chemotherapy was not indicated and the patient did well. fileciteturn1file1L26-L32 
+
+Why the others are wrong:
+• A: These implants are not considered metastasis and do not mandate chemotherapy.
+• C: No evidence of embryonal carcinoma is implied.
+• D: Aggressive peritoneal stripping is not standard; manage expectantly with surveillance and resection if symptomatic.
+
+Bottom Line/High Yield:
+• Glial implants after teratoma rupture = gliomatosis peritonei (benign).
+• Does not upstage; no routine chemotherapy.
+• Follow clinically; resect only if symptomatic."
+"13","Ovarian_Tumors","A 12-year-old with an adnexal mass is counseled preoperatively. Question type: Which statement is most accurate regarding pediatric ovarian tumors and surgical philosophy?","Most pediatric ovarian tumors are epithelial and malignant, so oophorectomy should be routine","Approximately 10% of pediatric ovarian tumors are malignant; germ cell tumors predominate; ovarian preservation is emphasized when safe","Dysgerminoma is the most common tumor in normal gonads of premenarchal girls","Because metastatic spread is rare, staging is unnecessary","","B","Correct answer: B — Only ~10% are malignant; germ cell tumors (especially teratomas) predominate; fertility-preserving strategies are emphasized when oncologically appropriate.
+
+The chapter provides the epidemiology and underscores preservation while ensuring cure. fileciteturn1file4L1-L8 
+
+Why the others are wrong:
+• A: Epithelial tumors predominate in adults, not children; pediatric tumors are mostly germ cell. fileciteturn1file4L1-L4 
+• C: Dysgerminoma is more associated with dysgenetic gonads; teratoma is most common. fileciteturn1file4L57-L64 
+• D: Inadequate staging risks recurrence/metastasis. fileciteturn1file4L5-L8 
+
+Bottom Line/High Yield:
+• Malignancy ~10%; germ cell tumors predominate.
+• Prioritize ovarian preservation when safe.
+• Proper staging remains essential."
+"14","Ovarian_Tumors","A 9-year-old presents with acute torsion of a teratoma-bearing ovary; the parenchyma is hemorrhagic and planes are obscured. Question type: What is the most appropriate surgical strategy to preserve ovarian tissue?","Abort surgery and schedule elective enucleation","Hilar resection of the tumor with maximal preservation of viable ovarian tissue","Total oophorectomy because enucleation is impossible in torsion","Percutaneous aspiration to reduce size and detorse only","","B","Correct answer: B — Hilar resection of the tumor to salvage ovarian tissue.
+
+In torsion with hemorrhagic changes, discrete enucleation may be impossible; the chapter illustrates performing a hilar resection to preserve as much ovary as possible. fileciteturn1file3L27-L35 
+
+Why the others are wrong:
+• A: Delaying risks further ischemic damage.
+• C: Oophorectomy is not mandatory; preservation is a priority when feasible. fileciteturn1file4L1-L8 
+• D: Aspiration alone is not oncologic treatment.
+
+Bottom Line/High Yield:
+• In torsion, classic enucleation may be impossible—consider hilar resection.
+• Aim to preserve viable ovarian tissue when safe."
+"15","Ovarian_Tumors","A 13-year-old with a large ruptured ovarian teratoma has preoperative AFP 138 ng/mL; washings are negative; laparoscopic salpingo‑oophorectomy is performed and pelvis debrided. She is lost to follow-up and returns a year later with ascites, peritoneal implants, and AFP 2,000 ng/mL. Question type: Which statement best reflects evidence-based management and expected course?","Stage I malignant teratoma with elevated AFP requires mandatory adjuvant chemotherapy; recurrence indicates poor salvage","Even when chemotherapy is initially deferred in stage I, recurrent yolk sac tumor is typically salvageable with PEB (platinum/etoposide/bleomycin)","Radiation therapy is preferred for peritoneal implants","Recurrence implies transformation to dysgerminoma requiring BEP + radiation","","B","Correct answer: B — Recurrent yolk sac tumor after initial resection of malignant teratoma is typically salvageable with PEB chemotherapy.
+
+The chapter describes a case of elevated AFP malignant teratoma that recurred as yolk sac tumor and was successfully treated with carboplatin/etoposide/bleomycin (PEB), with durable remission. fileciteturn1file3L16-L18 
+
+Why the others are wrong:
+• A: Adjuvant chemo is not universally required for stage I pediatric malignant teratoma; surveillance with salvage at recurrence is acceptable. fileciteturn1file3L16-L18 
+• C: Radiation has no role.
+• D: Dysgerminoma is not implied; yolk sac tumor is the usual malignant component with AFP elevation. fileciteturn1file4L57-L65 
+
+Bottom Line/High Yield:
+• Elevated AFP suggests yolk sac component.
+• Recurrence is often salvageable with PEB.
+• Routine adjuvant chemo is not mandatory for stage I pediatric malignant teratoma."
