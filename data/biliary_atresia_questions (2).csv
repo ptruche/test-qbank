@@ -1,0 +1,129 @@
+id,subject,stem,A,B,C,D,E,correct,explanation
+1,Biliary Atresia,"A 7-week-old girl presents with persistent jaundice and acholic stools. Physical examination reveals hepatomegaly. Laboratory tests show conjugated hyperbilirubinemia. Ultrasound shows absence of the gallbladder, and intraoperative cholangiogram demonstrates no passage of contrast into the intrahepatic ducts. Which of the following is the most critical factor determining postoperative outcomes after Kasai portoenterostomy?",Timing of the operation relative to age,Presence of a gallbladder on preoperative ultrasound,Use of adjuvant corticosteroid therapy,Intraoperative identification of bile lakes,Presence of polysplenia on imaging,A,"**Correct answer: A — Timing of the operation relative to age.**
+
+### Prognostic Determinant
+- The **single most important determinant** of postoperative success following Kasai portoenterostomy is **the age at the time of surgery**.  
+- Best outcomes occur when surgery is performed **before 60 days of life**, with progressive decline in native liver survival after this window.
+
+### Pathophysiology
+- Biliary atresia involves **progressive fibroinflammatory obliteration** of extrahepatic bile ducts, leading to secondary intrahepatic biliary fibrosis.  
+- Delay in intervention allows irreversible **biliary cirrhosis** to develop, limiting postoperative bile drainage even if continuity is restored.
+
+### Operative Principle
+- The Kasai portoenterostomy aims to anastomose a **Roux-en-Y limb** directly to the **porta hepatis**, where microscopic bile ductules remain.  
+- Early operation ensures a greater number of patent ductules are still present, improving drainage potential.
+
+### Outcomes by Age
+| Age at Kasai | Native Liver Survival (Approx.) |
+|---------------|--------------------------------|
+| <60 days | 60–70% |
+| 61–90 days | 30–40% |
+| >90 days | <20% |
+
+### Incorrect Answers
+- **B:** Gallbladder presence can assist in diagnosis but does not predict postoperative drainage.  
+- **C:** Corticosteroids may transiently improve bile flow but have **no long-term survival benefit**.  
+- **D:** Bile lakes are markers of ductular obstruction, not outcome predictors.  
+- **E:** Polysplenia (asplenia syndrome) indicates syndromic BA, which correlates with worse prognosis but less strongly than surgical timing.
+
+**Summary Takeaway:** *Native liver survival after Kasai is most dependent on performing the operation before 60 days of life.*"
+2,Biliary Atresia,"A 2-month-old boy with conjugated hyperbilirubinemia and acholic stools undergoes a percutaneous liver biopsy. The pathology shows bile duct proliferation, portal fibrosis, and bile plugs within canaliculi. Which histologic finding helps differentiate biliary atresia from neonatal hepatitis?",Portal tract bile duct proliferation,Multinucleated giant hepatocytes,Cholestasis within canaliculi,Bridging fibrosis between portal tracts,Inflammation of bile ducts and portal areas,A,"**Correct answer: A — Portal tract bile duct proliferation.**
+
+### Histopathologic Distinction
+- In **biliary atresia**, portal tracts show **marked bile ductular proliferation**, portal fibrosis, and bile plugs.  
+- In contrast, **neonatal hepatitis** demonstrates **giant cell transformation** and lobular disarray without significant ductular proliferation.
+
+### Key Differentiating Features
+
+| Feature | Biliary Atresia | Neonatal Hepatitis |
+|----------|------------------|-------------------|
+| Bile duct proliferation | Prominent | Minimal/Absent |
+| Portal fibrosis | Early and progressive | Mild |
+| Giant cell transformation | Mild | Marked |
+| Cholestasis | Portal and lobular | Lobular predominance |
+| Inflammation | Portal tracts | Lobular and portal |
+
+### Diagnostic Value
+- Ductular proliferation reflects **attempted regeneration** in response to extrahepatic obstruction.  
+- Early recognition is critical since **delays beyond 60 days** markedly worsen prognosis.
+
+### Incorrect Answers
+- **B:** Seen in neonatal hepatitis, not a distinguishing feature for biliary atresia.  
+- **C:** Present in both disorders and thus non-specific.  
+- **D:** Occurs in advanced disease of any etiology.  
+- **E:** Seen in both; pattern, not presence, matters.
+
+**Summary Takeaway:** *Marked portal ductular proliferation with portal fibrosis distinguishes biliary atresia from neonatal hepatitis.*"
+3,Biliary Atresia,A 6-week-old infant is evaluated for conjugated hyperbilirubinemia. HIDA scan after phenobarbital priming shows no excretion of tracer into the intestine after 24 hours. What is the next best step in management?,Start ursodeoxycholic acid and repeat scan in 1 week,Obtain MRCP to assess extrahepatic ducts,Proceed with diagnostic laparotomy and intraoperative cholangiogram,Perform percutaneous transhepatic cholangiogram,Observe with serial bilirubin monitoring,C,"**Correct answer: C — Proceed with diagnostic laparotomy and intraoperative cholangiogram.**
+
+### Diagnostic Algorithm
+- The **gold standard** for diagnosing biliary atresia is **intraoperative cholangiography**.  
+- When HIDA fails to show biliary excretion despite phenobarbital priming, **surgical exploration** is indicated to confirm the diagnosis and proceed with **Kasai portoenterostomy** in the same setting if BA is found.
+
+### Imaging Interpretation
+- A non-excreting HIDA scan suggests **biliary obstruction** but is not specific for BA.  
+- False positives may occur in **severe hepatocellular dysfunction**, hence the need for operative confirmation.
+
+### Surgical Decision-Making
+- If cholangiogram shows patent ducts → rule out BA.  
+- If ducts are absent or fibrotic → proceed immediately with **Kasai portoenterostomy**.
+
+### Incorrect Answers
+- **A:** Delaying surgery worsens prognosis; medical therapy ineffective.  
+- **B:** MRCP lacks sufficient resolution in neonates.  
+- **D:** Invasive, technically difficult, and not routinely indicated.  
+- **E:** Observation risks irreversible hepatic fibrosis.
+
+**Summary Takeaway:** *A non-excreting HIDA after phenobarbital priming warrants prompt intraoperative cholangiogram and, if confirmed, immediate Kasai portoenterostomy.*"
+4,Biliary Atresia,"A 2-month-old girl with biliary atresia develops cholangitis 2 weeks after Kasai portoenterostomy. She presents with fever, jaundice, and pale stools. Which of the following is the most appropriate next step in management?",Broad-spectrum IV antibiotics,Urgent repeat Kasai portoenterostomy,Corticosteroid pulse therapy,Endoscopic biliary stenting,Liver transplantation,A,"**Correct answer: A — Broad-spectrum IV antibiotics.**
+
+### Pathophysiology
+- **Ascending cholangitis** is common after Kasai due to retrograde bacterial contamination from the Roux limb.  
+- Early episodes can cause rapid deterioration of bile flow and hepatic function if not treated promptly.
+
+### Clinical Presentation
+- Fever, increased jaundice, acholic stools, and elevated bilirubin are typical.  
+- Diagnosis is clinical; imaging may show intrahepatic ductal dilation.
+
+### Management Algorithm
+1. **Initiate broad-spectrum IV antibiotics** (e.g., piperacillin-tazobactam).  
+2. Supportive care and hydration.  
+3. Resume prophylactic oral antibiotics once improved.  
+4. Recurrent cases may warrant evaluation for **Kasai failure** or transplant candidacy.
+
+### Prevention
+- **Prophylactic antibiotics** (e.g., TMP-SMX or neomycin) reduce recurrence risk.  
+- Proper Roux limb length (≥40 cm) also minimizes reflux.
+
+### Incorrect Answers
+- **B:** Reserved for early technical failure, not cholangitis.  
+- **C:** Corticosteroids not indicated for infection.  
+- **D:** Endoscopy not applicable due to altered anatomy.  
+- **E:** Transplant reserved for end-stage liver disease or failed Kasai.
+
+**Summary Takeaway:** *Post-Kasai cholangitis is managed with immediate broad-spectrum IV antibiotics; prevention includes prophylactic antibiotics and proper Roux limb design.*"
+5,Biliary Atresia,"A 4-year-old girl with history of Kasai portoenterostomy in infancy presents with worsening jaundice, splenomegaly, and growth failure. Laboratory studies show elevated bilirubin, low albumin, and thrombocytopenia. Which of the following findings most strongly indicates the need for liver transplantation?",Elevated gamma-glutamyl transferase (GGT),Recurrent episodes of cholangitis,Evidence of portal hypertension with hypersplenism,Persistent hyperbilirubinemia >6 mg/dL beyond infancy,Presence of gastroesophageal varices on endoscopy,D,"**Correct answer: D — Persistent hyperbilirubinemia >6 mg/dL beyond infancy.**
+
+### Prognostic Indicator
+- Persistent jaundice after Kasai is the **strongest predictor of poor native liver survival**.  
+- A **total bilirubin >6 mg/dL at 3 months post-Kasai** correlates with progressive cirrhosis and need for transplant.
+
+### Evaluation
+- Assess synthetic function (albumin, INR) and complications (ascites, varices).  
+- Early referral improves survival and reduces pretransplant morbidity.
+
+### Transplant Indications
+| Category | Examples |
+|-----------|-----------|
+| Failed bile drainage | Persistent hyperbilirubinemia |
+| Complications of cirrhosis | Ascites, variceal bleeding, growth failure |
+| Recurrent infections | ≥3 cholangitis episodes/year |
+| Synthetic dysfunction | INR > 1.5, albumin < 3 g/dL |
+
+### Incorrect Answers
+- **A:** Nonspecific cholestatic marker.  
+- **B:** Important but not the *primary* trigger alone.  
+- **C:** Common feature but not definitive indication.  
+- **E:** Reflects portal hypertension, which supports but does not define failure.
+
+**Summary Takeaway:** *Persistent hyperbilirubinemia after Kasai is the single most predictive indicator of the need for liver transplantation.*"
