@@ -1,0 +1,138 @@
+"id","subject","stem","A","B","C","D","E","correct","explanation"
+"1","ovarian_masses","A 13-year-old girl presents with 10 hours of sudden-onset, worsening right lower quadrant pain associated with nausea and one episode of emesis. She has not yet had menarche. Examination shows focal tenderness with guarding in the right lower quadrant and no peritoneal signs. Pregnancy test is negative. Pelvic ultrasonography shows a 7.2-cm right adnexal mass with echogenic components and posterior acoustic shadowing consistent with a mature cystic teratoma; arterial and venous Doppler flow are diminished but still present. At laparoscopy, the ovary appears enlarged, edematous, and dusky with two twists of the utero-ovarian pedicle.","Immediate right salpingo-oophorectomy to prevent thromboembolism","Detorsion of the adnexa and ovarian cystectomy with ovarian preservation","Oophoropexy of both ovaries without detorsion to minimize reperfusion injury","Observation with repeat ultrasonography in 24–48 hours","Open laparotomy and oophorectomy with frozen section","B","Correct answer: B — Detorsion of the adnexa and ovarian cystectomy with ovarian preservation
+The key principle in pediatric and adolescent ovarian torsion is ovarian preservation whenever feasible. The ovary in torsion often appears enlarged, edematous, and cyanotic due to venous and lymphatic congestion; however, gross appearance is a poor predictor of viability. Reperfusion frequently restores function even after prolonged ischemia. Therefore, the standard operative approach is prompt laparoscopic detorsion of the adnexa, followed by cystectomy if a benign-appearing mass (eg, mature cystic teratoma) is present, while preserving as much ovarian tissue as possible.
+
+Pathophysiology/Mechanism: Ovarian torsion results from rotation of the infundibulopelvic and utero-ovarian ligaments around an enlarged, weight-bearing adnexa. In adolescents, the most common predisposing lesion is a mature cystic teratoma. Torsion impairs venous outflow first, leading to stromal edema and hemorrhage; arterial inflow may persist via dual supply, explaining why Doppler flow does not reliably exclude torsion. The dusky appearance reflects venous congestion rather than irreversible necrosis. Restoration of flow after detorsion permits recovery of folliculogenesis in the majority of cases.
+
+Diagnosis/Workup: Ultrasound is the first-line imaging modality. Findings include an enlarged ovary (>4 cm), peripheral displacement of follicles, free fluid, and often a coexisting cystic lesion. Doppler flow can be present due to intermittent torsion or collateral flow; thus, the diagnosis is clinical-imaging synthesis rather than reliance on Doppler alone. Pregnancy testing is essential in adolescents to exclude ectopic pregnancy; tumor markers are not required emergently unless malignancy is suspected by imaging (solid components with papillary projections, ascites, nodal disease).
+
+Management/Operative Approach: Urgent laparoscopy is indicated to salvage ovarian function. The adnexa should be gently detorsed without prior oophorectomy, even when the ovary appears dark or hemorrhagic. After detorsion, the mass should be treated based on appearance: for a mature cystic teratoma, perform ovarian-sparing cystectomy with meticulous hemostasis and copious irrigation to minimize chemical peritonitis from spillage. Routine oophoropexy is not universally recommended after a first episode unless predisposing factors exist (eg, long utero-ovarian ligament, absent utero-ovarian ligament, or contralateral solitary ovary). A contralateral survey is performed to identify synchronous lesions. Intraoperative frozen section is unnecessary for classic benign dermoid features in this age group.
+
+Prognosis/Outcomes: Ovarian salvage rates exceed 80% when detorsion is performed promptly. Ultrasound follow-up typically demonstrates normalization of size and vascularity within weeks, and many patients resume normal ovarian function, including future fertility. The risk of thromboembolism after detorsion is theoretical and not supported by outcome data; anticoagulation is not indicated. Recurrence is uncommon but may be mitigated by treating the predisposing mass and selective oophoropexy in recurrent torsion.
+
+Table: Key distinctions relevant to torsion in adolescents
+| Feature | Diagnostic value | Management implication |
+|---|---|---|
+| Persisting Doppler arterial flow | Does not exclude torsion | Proceed to diagnostic/therapeutic laparoscopy if suspicion persists |
+| Grossly cyanotic ovary | Poor predictor of necrosis | Attempt detorsion and preserve ovary |
+| Coexisting mature cystic teratoma | Common torsion substrate | Perform ovarian-sparing cystectomy |
+| Routine oophoropexy | Not first-line after index event | Consider for recurrent torsion or solitary ovary |
+
+Alternative options: 
+A — This option refers to oophorectomy, which is generally avoided in torsion because most ovaries recover after detorsion and preservation is safe; fear of thromboembolism is not a valid indication for oophorectomy. 
+C — Although related to recurrence prevention, oophoropexy without detorsion is inappropriate and does not address ischemia; if used, oophoropexy is considered after detorsion in select recurrent cases. 
+D — Observation risks continued ischemia and loss of the ovary; timely operative detorsion is the standard of care when torsion is suspected. 
+E — Laparoscopy is preferred for diagnosis and treatment; routine oophorectomy with frozen section is unnecessary for a classic dermoid in an adolescent.
+
+Educational objective: **In pediatric and adolescent ovarian torsion, promptly perform laparoscopic detorsion and ovarian-sparing cystectomy for benign lesions, as gross appearance and Doppler flow are unreliable predictors of viability and most ovaries recover function after detorsion.**
+"
+"2","ovarian_masses","A 10-year-old girl presents with progressive abdominal distension and early satiety. Ultrasound shows a 12-cm predominantly solid right ovarian mass with internal vascularity and small ascites. Serum tumor markers reveal markedly elevated alpha-fetoprotein (AFP) and normal beta-hCG and LDH. CT chest/abdomen/pelvis shows no pulmonary nodules and no retroperitoneal adenopathy. She undergoes laparoscopic evaluation converted to a mini-laparotomy for en bloc resection of the mass.","Right salpingo-oophorectomy with comprehensive staging and fertility-sparing approach","Right ovarian cystectomy with capsule violation to preserve maximal ovarian tissue","Neoadjuvant cisplatin-based chemotherapy followed by bilateral oophorectomy","Observation with serial AFP measurements and ultrasonography","Radical total abdominal hysterectomy and bilateral salpingo-oophorectomy","A","Correct answer: A — Right salpingo-oophorectomy with comprehensive staging and fertility-sparing approach
+The presentation is most consistent with a malignant germ cell tumor, specifically a yolk sac (endodermal sinus) tumor, characterized by a unilateral, solid vascular mass with elevated alpha-fetoprotein (AFP). The cornerstone of therapy is complete surgical excision of the involved ovary with formal staging while preserving the uterus and contralateral ovary. In prepubertal and adolescent patients, fertility-sparing unilateral salpingo-oophorectomy with staging followed by risk-adapted cisplatin-based chemotherapy achieves excellent survival while maintaining reproductive potential.
+
+Pathophysiology/Mechanism: Yolk sac tumors arise from pluripotent germ cells that undergo malignant transformation with yolk sac differentiation, producing AFP. They grow rapidly, invade locally, and can seed the peritoneum if the capsule is violated. Unlike epithelial ovarian cancers, pediatric germ cell tumors are usually unilateral and confined at diagnosis, allowing fertility-sparing surgery without compromising oncologic control.
+
+Diagnosis/Workup: Baseline markers (AFP, beta-hCG, LDH, inhibin A/B if sex cord–stromal tumor suspected) and cross-sectional imaging are essential. Markedly elevated AFP strongly implicates a yolk sac tumor; normal beta-hCG argues against choriocarcinoma or embryonal carcinoma components. Imaging evaluates resectability and metastatic disease (omentum, peritoneum, retroperitoneal nodes, lungs). Intraoperative frozen section can guide the extent of resection but should not delay oncologically sound surgery.
+
+Management/Operative Approach: The operative goal is en bloc removal of the involved ovary with the fallopian tube (unilateral salpingo-oophorectomy) without tumor rupture. Staging includes peritoneal washings, careful inspection and palpation, omentectomy if grossly involved, biopsy of suspicious peritoneal implants, and sampling/enlarged-node biopsy when indicated; routine random biopsies are unnecessary. The contralateral ovary is visually assessed but not biopsied if normal. Capsule violation or cystectomy risks tumor spillage and upstaging, worsening prognosis and mandating more intensive chemotherapy. Postoperatively, patients typically receive cisplatin-based combination chemotherapy (eg, PEB: cisplatin, etoposide, bleomycin) tailored to stage and risk. AFP is followed serially to document appropriate decline (half-life ~5–7 days) and to surveil for relapse.
+
+Prognosis/Outcomes: With appropriate surgery and chemotherapy, event-free survival exceeds 85–90% for localized disease, and overall survival is high even with advanced stage. Most patients retain normal menses and future fertility with unilateral resection. Relapse is heralded by a rising AFP and treated effectively with salvage regimens. Long-term toxicities of cisplatin (ototoxicity, nephrotoxicity) and bleomycin (pulmonary) require counseling and surveillance.
+
+Table: Pediatric ovarian mass—tumor marker patterns
+| Tumor type | AFP | β-hCG | LDH | Typical age |
+|---|---|---|---|---|
+| Yolk sac | Markedly elevated | Normal | ±Elevated | Childhood/adolescence |
+| Dysgerminoma | Normal | Normal | Elevated | Adolescence/young adult |
+| Choriocarcinoma | Normal/↑ (rare) | Markedly elevated | Variable | Adolescence |
+| Mature teratoma | Normal | Normal | Normal | Any |
+| Juvenile granulosa cell tumor | Normal | Normal | Normal | Early childhood (precocity) |
+
+Alternative options:
+B — This option refers to cystectomy, which risks capsule violation and peritoneal spillage; for suspected malignant germ cell tumor, oophorectomy of the involved side with intact specimen is standard. 
+C — Neoadjuvant chemotherapy is reserved for unresectable or metastatic disease; bilateral oophorectomy is unnecessary and would impair fertility. 
+D — Observation is inappropriate for a large solid mass with malignant markers; delay risks tumor progression and rupture. 
+E — Radical hysterectomy with bilateral salpingo-oophorectomy is not indicated in pediatric germ cell tumors, which are typically unilateral and amenable to fertility-sparing surgery.
+
+Educational objective: **For pediatric ovarian yolk sac tumor, perform unilateral salpingo-oophorectomy with formal staging and preserve the contralateral ovary and uterus; adjuvant cisplatin-based chemotherapy and serial AFP monitoring provide excellent survival with fertility preservation.**
+"
+"3","ovarian_masses","A 5-year-old girl presents with 6 months of progressive breast development, a rapid growth spurt, and intermittent vaginal spotting. Examination shows Tanner stage III breasts and no clitoromegaly. Serum estradiol is elevated with suppressed LH/FSH, consistent with gonadotropin-independent precocity. Pelvic ultrasound reveals an 8-cm left ovarian mass with solid and cystic components and internal hemorrhage; the endometrial stripe is thickened. AFP, beta-hCG, and LDH are within normal limits; inhibin B is elevated. There is no ascites or evidence of metastasis on imaging.","Left ovarian cystectomy with endometrial curettage","Left salpingo-oophorectomy with staging and fertility preservation","Bilateral oophorectomy with GnRH agonist therapy","High-dose progestin therapy followed by observation","Chemotherapy with cisplatin, etoposide, and bleomycin without surgery","B","Correct answer: B — Left salpingo-oophorectomy with staging and fertility preservation
+This child has peripheral (gonadotropin-independent) precocious puberty due to estrogen-secreting ovarian neoplasm. The elevated inhibin B, thickened endometrium, and unilateral complex mass are characteristic of a juvenile granulosa cell tumor (JGCT), a malignant sex cord–stromal tumor. The appropriate management is unilateral salpingo-oophorectomy with surgical staging while preserving the uterus and contralateral ovary; most cases are stage I and cured with surgery alone.
+
+Pathophysiology/Mechanism: JGCTs arise from granulosa cells and produce estradiol and inhibins that suppress pituitary gonadotropins. Chronic estrogen exposure stimulates breast development and endometrial proliferation, causing breakthrough bleeding. These tumors are typically unilateral, large, and may have hemorrhagic or cystic areas. The malignant potential is real but substantially lower than epithelial ovarian cancers; stage at diagnosis drives prognosis.
+
+Diagnosis/Workup: Laboratory evaluation of peripheral precocity demonstrates elevated estradiol with suppressed LH/FSH that do not rise with GnRH stimulation. Tumor markers include inhibin A/B (often elevated) and, less consistently, AMH; AFP, β-hCG, and LDH help exclude germ cell tumors. Pelvic ultrasonography delineates a complex ovarian mass and estrogenized endometrium; MRI can further characterize indeterminate lesions. Endometrial sampling is rarely necessary in children unless prolonged bleeding raises concern for hyperplasia, as endometrium usually regresses after tumor removal.
+
+Management/Operative Approach: The operative strategy is unilateral salpingo-oophorectomy with care to avoid rupture. Staging includes peritoneal washings, inspection of peritoneal surfaces, and biopsy/resection of suspicious lesions; routine lymphadenectomy is not indicated. Cystectomy alone risks residual tumor and recurrence because JGCT is not a benign cystic lesion. Adjuvant chemotherapy is reserved for advanced stage, rupture with gross spillage, or unfavorable histology, typically employing platinum-based regimens extrapolated from adult data. Following resection, estradiol levels normalize, and secondary sexual characteristics regress or stabilize to age-appropriate tempo.
+
+Prognosis/Outcomes: Stage I JGCT carries an excellent prognosis with >90% survival. The uterus and contralateral ovary are preserved, allowing normal pubertal development and future fertility. Late recurrences can occur; surveillance includes periodic pelvic imaging and inhibin levels. Endometrial hyperplasia is uncommon in children but resolves with normalization of estrogen exposure.
+
+Table: Distinguishing features of estrogen-mediated precocity
+| Feature | Peripheral (ovarian tumor) | Central (early GnRH activation) |
+|---|---|---|
+| LH/FSH at baseline | Suppressed | Pubertal range |
+| GnRH stimulation | No rise | Exaggerated rise |
+| Estradiol | Elevated | Elevated |
+| Imaging | Unilateral ovarian mass; thick endometrium | Normal ovaries; advanced bone age; CNS lesion possible |
+| Primary therapy | Tumor resection | GnRH agonist therapy |
+
+Alternative options:
+A — This option refers to cystectomy, which risks residual malignant tissue; salpingo-oophorectomy is the oncologically appropriate operation for JGCT. 
+C — Bilateral oophorectomy is not indicated for a unilateral tumor and would cause permanent ovarian insufficiency; GnRH agonists treat central, not peripheral, precocity. 
+D — Progestins may attenuate uterine bleeding but do not treat the tumor; observation would allow progression. 
+E — Chemotherapy alone is inappropriate for a resectable localized sex cord–stromal tumor; surgery is primary therapy.
+
+Educational objective: **Juvenile granulosa cell tumor causes peripheral precocity via estrogen excess; treatment is unilateral salpingo-oophorectomy with staging while preserving future fertility, with excellent outcomes for stage I disease.**
+"
+"4","ovarian_masses","A 16-year-old sexually active adolescent presents with mild left lower quadrant pain and a missed period. Pregnancy test is positive. Transvaginal ultrasonography shows an intrauterine gestational sac with yolk sac consistent with 6 weeks’ gestation. A 3.5-cm left ovarian cyst with thick wall and peripheral vascularity is noted; there are no solid nodules, papillary projections, or ascites. She is hemodynamically stable without peritoneal signs.","Immediate cystectomy to prevent torsion and miscarriage","Methotrexate therapy for presumed ectopic pregnancy","Expectant management; no surgery unless symptoms worsen or cyst enlarges","Staging laparotomy because of suspected malignant neoplasm","Elective oophoropexy and cystectomy in the second trimester","C","Correct answer: C — Expectant management; no surgery unless symptoms worsen or cyst enlarges
+The ultrasound demonstrates an intrauterine pregnancy and a small, thick-walled ovarian cyst with peripheral (“ring of fire”) vascularity typical of a corpus luteum cyst. In early pregnancy, corpus luteum function is essential for progesterone production until placental takeover at ~10–12 weeks. Most corpus luteum cysts are physiologic and regress spontaneously by the second trimester; intervention is unnecessary unless the cyst persists, enlarges, becomes suspicious for neoplasm, or causes complications (torsion/rupture).
+
+Pathophysiology/Mechanism: After ovulation, the follicle luteinizes to produce progesterone. In pregnancy, human chorionic gonadotropin (hCG) maintains the corpus luteum. Occasionally, the corpus luteum forms a cystic enlargement that can be hemorrhagic. These cysts are benign and self-limited. Surgical removal before placental progesterone sufficiency may precipitate miscarriage due to luteal insufficiency.
+
+Diagnosis/Workup: In a pregnant adolescent with adnexal mass, the first step is to confirm intrauterine pregnancy to exclude ectopic gestation; a definitive intrauterine yolk sac essentially rules out ectopic except in rare heterotopic pregnancy. Ultrasound features of corpus luteum cyst include a thick echogenic wall, crenulated margins, internal echoes from hemorrhage, and circumferential peripheral flow on Doppler. Lack of solid nodules, papillary excrescences, or ascites supports a benign lesion. Tumor markers are not indicated during normal pregnancy evaluation of a classic corpus luteum; CA-125 is nonspecific and can be elevated in pregnancy.
+
+Management/Operative Approach: Expectant management is standard for asymptomatic corpus luteum cysts ≤5–6 cm with benign imaging features. Activity as tolerated and return precautions are appropriate. Surgery is considered for persistent/enlarging cysts beyond the first trimester, atypical features suggesting neoplasm, or complications (torsion/rupture). If operation is necessary, the second trimester is preferred to minimize miscarriage risk; cystectomy with ovarian preservation is usually feasible. Empiric methotrexate is contraindicated in confirmed intrauterine pregnancy.
+
+Prognosis/Outcomes: Most corpus luteum cysts involute spontaneously by 12–16 weeks. Complication rates are low. Surgical intervention, when indicated, is associated with excellent maternal-fetal outcomes when performed laparoscopically in the second trimester with appropriate obstetric collaboration.
+
+Table: Common early-pregnancy adnexal masses
+| Lesion | Typical size | Key ultrasound features | Management |
+|---|---|---|---|
+| Corpus luteum cyst | 2–5 cm | Thick wall, peripheral flow, hemorrhagic echoes | Expectant; avoid early removal |
+| Theca lutein cysts | Often bilateral, large | Multiloculated; high hCG states | Treat underlying cause; expectant unless complicated |
+| Mature cystic teratoma | Variable | Echogenic foci, shadowing, dermoid mesh | Elective cystectomy if symptomatic or enlarging |
+| Ectopic pregnancy | Variable | Adnexal mass without IUP; tubal ring; free fluid | Methotrexate or surgery |
+
+Alternative options:
+A — This option refers to early cystectomy, which risks luteal insufficiency and miscarriage; observation is appropriate for a benign-appearing 3.5-cm cyst with confirmed intrauterine pregnancy. 
+B — Methotrexate is used for ectopic pregnancy; a definitive intrauterine yolk sac excludes isolated ectopic in most cases. 
+D — Staging laparotomy is not indicated without features of malignancy. 
+E — Prophylactic oophoropexy is not indicated; surgery is only considered for concerning features or complications, typically in the second trimester.
+
+Educational objective: **In early pregnancy, a small benign-appearing corpus luteum cyst is physiologic and managed expectantly; surgery is reserved for atypical features, persistence, or complications, with second-trimester timing preferred if intervention is required.**
+"
+"5","ovarian_masses","A 12-year-old premenarchal girl presents with her second episode of acute right lower quadrant pain in 4 months, each time awakening her from sleep. During the first episode, laparoscopy showed torsion of a normal-appearing right adnexa that was detorsed without oophoropexy. She now has similar severe pain with vomiting; ultrasound shows an enlarged right ovary with peripheral follicles and free fluid. At urgent laparoscopy, the right adnexa is again twisted twice, without masses on either side.","Right salpingo-oophorectomy due to recurrent torsion","Bilateral oophoropexy after detorsion with preservation of both ovaries","Observation after detorsion without fixation because oophoropexy impairs fertility","Prophylactic GnRH agonist therapy to suppress ovulation and reduce torsion risk","Right oophoropexy only; avoid contralateral fixation","B","Correct answer: B — Bilateral oophoropexy after detorsion with preservation of both ovaries
+Recurrent torsion of otherwise normal adnexa warrants oophoropexy to reduce further episodes. Fixation can be performed bilaterally because underlying elongation or laxity of adnexal supports can predispose both sides, and the contralateral ovary is at risk. The operation follows detorsion with ovarian preservation; nonabsorbable or delayed-absorbable sutures anchor the ovary to the utero-ovarian ligament and/or pelvic sidewall, avoiding vascular compromise.
+
+Pathophysiology/Mechanism: Torsion without a mass is associated with premenarchal anatomy, elongated utero-ovarian ligament, or hypermobility of the mesosalpinx. Recurrence rates after detorsion alone are reported up to 10–20% in select series, higher in those with prior torsion. Bilateral susceptibility likely reflects symmetric ligamentous laxity or similar ovarian volume dynamics across the cycle, supporting bilateral fixation at the time of a recurrent event.
+
+Diagnosis/Workup: Ultrasound again shows an enlarged, peripherally follicular ovary with free fluid, consistent with torsion; Doppler findings are variable and not determinative. The absence of masses favors primary adnexal torsion rather than mass-driven torsion. Intraoperative evaluation must confirm normal-appearing ovaries and tubes and rule out occult lesions; if a paratubal cyst is present, it should be excised.
+
+Management/Operative Approach: After detorsion, oophoropexy is performed to prevent further torsion. Techniques include plication of an elongated utero-ovarian ligament and/or fixation of the ovary to the pelvic sidewall or the utero-ovarian ligament using two-point fixation. Bilateral oophoropexy is favored in recurrent idiopathic torsion due to contralateral risk. Care is taken to avoid kinking the infundibulopelvic ligament or compromising blood supply. Salpingopexy can be added if tubal torsion is implicated. Oophorectomy is avoided because the ovary is viable and fertility preservation is paramount in children.
+
+Prognosis/Outcomes: Oophoropexy has high success in preventing recurrence, with low complication rates and preservation of ovarian function. Most patients resume normal menses and maintain fertility. Follow-up ultrasonography documents normal perfusion and position. Rare failures may reflect inadequate fixation or unaddressed predisposing lesions.
+
+Table: Indications and approach to oophoropexy in children
+| Scenario | Laterality | Key steps |
+|---|---|---|
+| First torsion with benign mass (dermoid) | Often none (treat mass) | Detorse, cystectomy; consider fixation if anatomy suggests risk |
+| First torsion without mass | Usually none | Detorse; counsel; consider fixation if anatomical laxity noted |
+| Recurrent torsion without mass | Bilateral | Detorse; bilateral oophoropexy (two-point) |
+| Solitary ovary or prior oophorectomy | Ipsilateral fixation | Strong consideration to protect remaining ovary |
+
+Alternative options:
+A — This option refers to oophorectomy, which is inappropriate because the ovary is viable and preservation is standard; removal would unnecessarily sacrifice fertility. 
+C — Observation after a second episode disregards the elevated recurrence risk; fixation is recommended. 
+D — GnRH agonists suppress ovulation but do not correct mechanical predisposition to torsion and are not a primary preventive strategy. 
+E — Unilateral fixation leaves the contralateral side at risk; bilateral oophoropexy is recommended in recurrent idiopathic torsion.
+
+Educational objective: **After recurrent idiopathic ovarian torsion with viable ovaries, perform bilateral oophoropexy following detorsion to reduce future torsion while preserving ovarian function.**
+"
