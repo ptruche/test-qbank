@@ -7,116 +7,132 @@ import streamlit as st
 
 st.set_page_config(page_title="PSITE", page_icon=None, layout="wide")
 
-# ================= CSS: Uniform font size for question, answers, and explanation =================
+# ================= Global Typography Reset (consistent, study-friendly) =================
+# - Single font stack (system UI) for crisp rendering
+# - One base size/line-height, modest scale for hierarchy
+# - Overrides Streamlit headings, captions, widgets, radios, metrics, etc.
 st.markdown(
     """
     <style>
+    /* ---------- Base + Variables ---------- */
     :root {
-      --font-size: 1.15rem;  /* Universal font size for all text */
-      --line-height: 1.55;
+      /* You can bump --base-size to 17px or 18px if desired */
+      --base-size: 16px;
+      --lh: 1.55;
+      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
       --card-bg:#ffffff; --card-border:#e6e8ec; --accent:#1d4ed8; --muted:#6b7280;
+
+      /* Type scale (kept tight for dense studying) */
+      --fs-xs: clamp(12px, .78rem, 13px);
+      --fs-sm: clamp(14px, .9rem, 15px);
+      --fs-md: clamp(16px, 1rem, 17px);      /* default body */
+      --fs-lg: clamp(17px, 1.06rem, 18px);   /* question prompt */
+      --fs-xl: clamp(18px, 1.12rem, 19px);   /* small headers */
+      --fs-2xl: clamp(20px, 1.22rem, 21px);  /* main title */
     }
 
-    html, body {
-      height: auto !important;
-      overflow-y: auto !important;
-      font-size: var(--font-size) !important;
-      line-height: var(--line-height) !important;
+    html, body, [data-testid="stAppViewContainer"], [data-testid="stMain"] {
+      font-family: var(--font) !important;
+      font-size: var(--fs-md) !important;
+      line-height: var(--lh) !important;
+      color: #111827;
+    }
+    .block-container { padding-top: 1.0rem !important; padding-bottom: .8rem !important; }
+
+    /* ---------- Normalize headings (prevent random size jumps) ---------- */
+    .stMarkdown h1, .stMarkdown h2, .stMarkdown h3,
+    .stMarkdown h4, .stMarkdown h5, .stMarkdown h6 {
+      font-family: var(--font) !important;
+      line-height: 1.25 !important;
+      margin: .35rem 0 .35rem 0 !important;
+      letter-spacing: .2px;
+    }
+    .stMarkdown h1 { font-size: var(--fs-2xl) !important; }
+    .stMarkdown h2 { font-size: var(--fs-xl) !important; }
+    .stMarkdown h3, .stMarkdown h4, .stMarkdown h5, .stMarkdown h6 { font-size: var(--fs-lg) !important; }
+    .stMarkdown p, .stMarkdown li, .stMarkdown span, .stText, .stCaption, .stCode {
+      font-size: var(--fs-md) !important;
+      line-height: var(--lh) !important;
+    }
+    .stCaption, .st-emotion-cache-psbm4p { /* caption normalization */
+      font-size: var(--fs-sm) !important;
+      color: var(--muted) !important;
     }
 
-    .block-container { padding-top: 1.1rem !important; padding-bottom: 0.8rem !important; }
-    [data-testid="stHorizontalBlock"] { overflow: visible !important; }
-    [data-testid="stAppViewContainer"], [data-testid="stMain"] { overflow-y: auto !important; }
-
-    /* Sticky header */
-    .sticky-top {
-      position: sticky; top: 0; z-index: 100; background: white;
-      padding: .65rem .5rem .5rem .5rem;
-      border-bottom: 1px solid #eef0f3;
-      overflow: visible; box-shadow: 0 1px 0 rgba(0,0,0,0.02);
-      margin-bottom: .35rem;
-    }
-    .top-title {
-      font-weight: 600;
-      letter-spacing:.2px;
-      font-size: 1.05rem;
-      line-height: 1.25;
-      margin: 0 0 .25rem 0;
-    }
-    .q-progress { height: 6px; background:#eef0f3; border-radius: 999px; overflow: hidden; margin: 0 0 4px 0; }
-    .q-progress > div { height:100%; background: var(--accent); width:0%; transition: width .25s ease; }
-
-    /* Header controls */
-    .hdr-row { display:flex; gap:.5rem; justify-content:flex-end; align-items:center; flex-wrap:wrap; }
-    .stButton>button { padding:.4rem .85rem; border-radius:8px; line-height:1.25; }
-
-    /* Question container */
-    .q-card { border:none; background:transparent; padding:0; box-shadow:none; }
-    .q-prompt {
-      border:1px solid var(--card-border);
-      background:#fafbfc;
-      border-radius:10px;
-      padding:12px;
-      margin:0 0 8px 0;
-      font-size: var(--font-size);
-      line-height: var(--line-height);
+    /* ---------- Buttons/Inputs ---------- */
+    .stButton>button, .stDownloadButton>button, .stFileUploader label, .stNumberInput input, .stTextInput input, .stSelectbox, .stMultiSelect {
+      font-family: var(--font) !important;
+      font-size: var(--fs-md) !important;
+      line-height: 1.3 !important;
     }
 
-    /* Answer choices: clean, consistent font */
+    /* ---------- Radio (answer choices) ---------- */
     div[role="radiogroup"] { gap: 0 !important; }
     div[role="radiogroup"] > label {
-      border:none !important;
-      background:transparent !important;
-      padding:8px 4px !important;
-      margin:2px 0 !important;
-      border-radius:6px;
+      border:none !important; background:transparent !important;
+      padding:8px 6px !important; margin:3px 0 !important; border-radius:8px;
       transition: background-color .15s ease;
     }
     div[role="radiogroup"] > label:hover { background:#f5f7fb !important; }
-    div[role="radiogroup"] > label p {
-      font-size: var(--font-size) !important;
-      line-height: var(--line-height) !important;
-      margin: 0 !important;
+    div[role="radiogroup"] * {
+      font-size: var(--fs-md) !important;
+      line-height: var(--lh) !important;
     }
-    div[role="radiogroup"] input:checked + div > p {
-      text-decoration: underline;
-      text-underline-offset: 3px;
+    div[role="radiogroup"] input:checked + div > p,
+    div[role="radiogroup"] input:checked + div > span {
+      text-decoration: underline; text-underline-offset: 3px;
     }
 
-    /* Reveal and verdict row */
-    .q-actions-row {
-      display:flex;
-      align-items:center;
-      gap:.6rem;
-      margin:0;
-      font-size: var(--font-size);
+    /* ---------- Top header (sticky) ---------- */
+    .sticky-top {
+      position: sticky; top: 0; z-index: 100; background: white;
+      padding: .6rem .5rem .55rem .5rem; border-bottom: 1px solid #eef0f3;
+      box-shadow: 0 1px 0 rgba(0,0,0,0.02); margin-bottom: .4rem;
     }
+    .top-title {
+      font-weight: 600; letter-spacing:.2px;
+      font-size: var(--fs-2xl) !important;
+      line-height: 1.25;
+      margin: 0 0 .3rem 0;
+    }
+    .q-progress { height: 6px; background:#eef0f3; border-radius: 999px; overflow: hidden; margin: 0 0 6px 0; }
+    .q-progress > div { height:100%; background: var(--accent); width:0%; transition: width .25s ease; }
+
+    /* ---------- Question card ---------- */
+    .q-card { border:none; background:transparent; padding:0; box-shadow:none; }
+    .q-prompt {
+      border:1px solid var(--card-border); background:#fafbfc; border-radius:10px;
+      padding:14px 12px; margin:0 0 10px 0;
+      font-size: var(--fs-lg) !important; line-height: var(--lh) !important;
+    }
+
+    /* ---------- Verdict + explanation ---------- */
+    .q-actions-row { display:flex; align-items:center; gap:.6rem; margin:0; }
     .verdict {
-      display:inline-flex;
-      align-items:center;
-      font-weight:600;
-      padding:.22rem .6rem;
-      border-radius:999px;
-      white-space:nowrap;
-      border:1px solid transparent;
-      font-size: var(--font-size);
+      display:inline-flex; align-items:center; font-weight:600;
+      padding:.22rem .6rem; border-radius:999px; white-space:nowrap;
+      border:1px solid transparent; font-size: var(--fs-sm) !important;
     }
     .verdict-ok  { background:#10b9811a; color:#065f46; border-color:#34d399; }
     .verdict-err { background:#ef44441a; color:#7f1d1d; border-color:#fca5a5; }
 
-    /* Explanation: plain background, same font size */
     .explain-plain {
-      margin-top:0;
-      padding:10px 0 0 0;
-      background:transparent !important;
-      border:none !important;
-      box-shadow:none !important;
-      font-size: var(--font-size);
-      line-height: var(--line-height);
+      margin-top:4px; padding:10px 0 0 0; background:transparent !important;
+      border:none !important; box-shadow:none !important;
+      font-size: var(--fs-md) !important; line-height: var(--lh) !important;
     }
+    .stDivider { margin:10px 0 !important; }
 
-    .stDivider { margin:8px 0 !important; }
-    .stMarkdown p { margin-bottom:0.35rem; }
+    /* ---------- Metrics ---------- */
+    .stMetric, .stMetric label, .stMetric div { font-size: var(--fs-md) !important; }
+
+    /* ---------- Sidebar ---------- */
+    section[data-testid="stSidebar"] * { font-size: var(--fs-md) !important; }
+    section[data-testid="stSidebar"] .stCaption { font-size: var(--fs-sm) !important; }
+
+    /* ---------- Tighten vertical rhythm ---------- */
+    .stMarkdown p { margin: 0 0 .4rem 0 !important; }
+    ul, ol { margin-top: .2rem !important; margin-bottom: .4rem !important; }
     </style>
     """,
     unsafe_allow_html=True
@@ -225,11 +241,11 @@ def render_question(pool: pd.DataFrame):
     st.markdown(f"<div class='q-prompt'>{row['stem']}</div>", unsafe_allow_html=True)
 
     letters = ["A","B","C","D","E"]
-    fmt = lambda L: str(row[L])
+    # Ensure stable default index for radio:
+    default_index = 0 if st.session_state.answers[i] not in letters else letters.index(st.session_state.answers[i])
     selected = st.radio(
-        label="", options=letters, format_func=fmt,
-        index=(letters.index(st.session_state.answers[i]) if st.session_state.answers[i] in letters else None),
-        label_visibility="collapsed", key=f"radio_choice_{i}"
+        label="", options=letters, format_func=lambda L: str(row[L]),
+        index=default_index, key=f"radio_choice_{i}", label_visibility="collapsed"
     )
     st.session_state.answers[i] = selected
 
@@ -240,8 +256,12 @@ def render_question(pool: pd.DataFrame):
     with col_v:
         if st.session_state.revealed[i]:
             correct = row["correct"].strip().upper()
-            verdict = "<span class='verdict verdict-ok'>Correct</span>" if selected == correct else "<span class='verdict verdict-err'>Incorrect</span>"
-            st.markdown(verdict, unsafe_allow_html=True)
+            verdict_html = (
+                "<span class='verdict verdict-ok'>Correct</span>"
+                if st.session_state.answers[i] == correct
+                else "<span class='verdict verdict-err'>Incorrect</span>"
+            )
+            st.markdown(verdict_html, unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
     if st.session_state.revealed[i]:
