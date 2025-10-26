@@ -63,7 +63,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_FOLDER = os.getenv("QBANK_DATA_DIR", os.path.join(BASE_DIR, "data"))
 MD_FOLDER = os.getenv("QBANK_MD_DIR", os.path.join(DATA_FOLDER, "questions"))
 
-# Create folders if missing (safe no-op locally; helps in cloud)
+# Ensure folders exist
 os.makedirs(DATA_FOLDER, exist_ok=True)
 os.makedirs(MD_FOLDER, exist_ok=True)
 
@@ -72,7 +72,6 @@ REQUIRED_COLS = ["id","subject","stem","A","B","C","D","E","correct","explanatio
 # ============================= SVG rendering + Scoped styling =============================
 SVG_BLOCK_RE = re.compile(r"(<svg[\s\S]*?</svg>)", re.IGNORECASE)
 
-# Styles that ONLY apply inside the revealed explanation (scoped via .explain-scope)
 EXPLAIN_SCOPE_CSS = """
 <style>
 .explain-scope { font-family: 'Segoe UI', Arial, sans-serif; font-size: 1.02rem; line-height: 1.55; color:#222; }
@@ -81,19 +80,13 @@ EXPLAIN_SCOPE_CSS = """
 .explain-scope .hdr-green { color:#059669; }
 .explain-scope .hdr-violet{ color:#7c3aed; }
 .explain-scope .hdr-rose  { color:#e11d48; }
-
-/* Table with marker-like color accents */
 .explain-scope table    { border-collapse:collapse; width:100%; margin:.4rem 0; border:2px solid #444; }
 .explain-scope th, td   { border:1px solid #d1d5db; padding:.45rem .5rem; text-align:center; }
 .explain-scope thead th { background:#1d4ed8; color:white; border-color:#1d4ed8; }
 .explain-scope tr:nth-child(even) { background:#f9fafb; }
 .explain-scope .t-blue  { color:#0b5394; }
 .explain-scope .t-red   { color:#b32400; }
-
-/* Gentle list spacing */
 .explain-scope ul { margin:.2rem 0 .2rem 1.1rem; }
-
-/* Any svg is in its own iframe via components.html and already self-styled. */
 </style>
 """
 
@@ -118,9 +111,7 @@ def render_explanation_block(explain_text: str):
     st.markdown("</div>", unsafe_allow_html=True)
 
 # ============================= Markdown loaders =============================
-# FIXED regex: no double-escaping
 FRONTMATTER_RE = re.compile(r"^---\s*([\s\S]*?)\s*---\s*([\s\S]*)$", re.MULTILINE)
-# More forgiving split (no strict newlines needed)
 EXPL_SPLIT_RE  = re.compile(r"<!--\s*EXPLANATION\s*-->", re.IGNORECASE)
 
 def _parse_front_matter(text: str):
@@ -157,9 +148,7 @@ def _read_md_question(path: str) -> Dict[str, str]:
         "correct": meta.get("correct","").strip().upper(),
         "stem": stem,
         "explanation": explanation,
-        "_file": path,
     }
-    # Check required fields quickly
     if not rec["id"] or not rec["subject"] or not rec["correct"]:
         raise ValueError("Missing 'id', 'subject', or 'correct'")
     for c in ["A","B","C","D","E"]:
@@ -167,16 +156,16 @@ def _read_md_question(path: str) -> Dict[str, str]:
             raise ValueError(f"Missing choice {c}")
     return rec
 
-def _read_all_markdown(folder: str) -> Tuple[pd.DataFrame, List[str]]:
+def _read_all_markdown(folder: str) -> Tuple[pd.DataFrame, int]:
     files = sorted(glob.glob(os.path.join(folder, "*.md")))
-    rows, errs = [], []
+    rows, skipped = [], 0
     for f in files:
         try:
             rows.append(_read_md_question(f))
-        except Exception as e:
-            errs.append(f"{os.path.basename(f)}: {e}")
+        except Exception:
+            skipped += 1
     if not rows:
-        return pd.DataFrame(columns=REQUIRED_COLS), errs
+        return pd.DataFrame(columns=REQUIRED_COLS), skipped
     df = pd.DataFrame(rows)
     for c in REQUIRED_COLS:
         if c not in df.columns:
@@ -184,25 +173,22 @@ def _read_all_markdown(folder: str) -> Tuple[pd.DataFrame, List[str]]:
         df[c] = df[c].astype(str).str.strip()
     df["correct"] = df["correct"].str.upper()
     df = df.drop_duplicates(subset=["id"], keep="first").reset_index(drop=True)
-    # Drop helper col
-    if "_file" in df.columns:
-        df = df.drop(columns=["_file"], errors="ignore")
-    return df, errs
+    return df, skipped
 
-def discover_subjects_from_markdown(folder: str) -> Tuple[Dict[str, Set[str]], List[str]]:
+def discover_subjects_from_markdown(folder: str) -> Dict[str, Set[str]]:
     files = sorted(glob.glob(os.path.join(folder, "*.md")))
     subj_to_files: Dict[str, Set[str]] = {}
-    errs = []
     for f in files:
         try:
-            rec = _read_md_question(f)
-        except Exception as e:
-            errs.append(f"{os.path.basename(f)}: {e}")
+            with open(f, "r", encoding="utf-8") as h:
+                raw = h.read()
+            meta, body = _parse_front_matter(raw)
+            subj = (meta.get("subject") or "").strip()
+            if subj:
+                subj_to_files.setdefault(subj, set()).add(f)
+        except Exception:
             continue
-        subj = rec.get("subject","").strip()
-        if subj:
-            subj_to_files.setdefault(subj, set()).add(f)
-    return subj_to_files, errs
+    return subj_to_files
 
 # ============================= (Optional) CSV support =============================
 def _read_csv_strict(path: str) -> pd.DataFrame:
@@ -229,8 +215,8 @@ def discover_subjects_from_csvs(folder: str) -> Dict[str, Set[str]]:
     return subj_to_files
 
 # ============================= Subject map (MD + CSV) =============================
-MD_SUBJECTS, MD_ERRORS  = discover_subjects_from_markdown(MD_FOLDER)
-CSV_SUBJECTS            = discover_subjects_from_csvs(DATA_FOLDER)
+MD_SUBJECTS  = discover_subjects_from_markdown(MD_FOLDER)
+CSV_SUBJECTS = discover_subjects_from_csvs(DATA_FOLDER)
 
 SUBJECT_TO_FILES: Dict[str, Set[str]] = {}
 for subj, paths in MD_SUBJECTS.items():
@@ -241,7 +227,7 @@ SUBJECT_OPTIONS = sorted(SUBJECT_TO_FILES.keys(), key=lambda s: s.lower())
 
 def _load_all_topics() -> pd.DataFrame:
     frames = []
-    df_md, _errs = _read_all_markdown(MD_FOLDER)
+    df_md, _ = _read_all_markdown(MD_FOLDER)
     if not df_md.empty:
         frames.append(df_md)
     for f in set().union(*CSV_SUBJECTS.values()) if CSV_SUBJECTS else []:
@@ -260,7 +246,7 @@ def load_questions_for_subjects(selected_subjects: List[str], random_all: bool) 
     if not selected_subjects:
         return pd.DataFrame(columns=REQUIRED_COLS)
     frames = []
-    df_md, _errs = _read_all_markdown(MD_FOLDER)
+    df_md, _ = _read_all_markdown(MD_FOLDER)
     if not df_md.empty:
         frames.append(df_md[df_md["subject"].isin(selected_subjects)])
     files_to_read = set()
@@ -352,20 +338,6 @@ def render_results(pool: pd.DataFrame):
 # ============================= Sidebar =============================
 with st.sidebar:
     st.header("Build Quiz")
-
-    # Debug panel so you can see exactly what's recognized
-    with st.expander("Debug (paths & files)"):
-        md_files = sorted(glob.glob(os.path.join(MD_FOLDER, "*.md")))
-        st.write("BASE_DIR:", BASE_DIR)
-        st.write("DATA_FOLDER:", DATA_FOLDER)
-        st.write("MD_FOLDER:", MD_FOLDER)
-        st.write("Found Markdown files:", len(md_files))
-        if md_files:
-            st.write("First few:", [os.path.basename(x) for x in md_files[:8]])
-        if MD_ERRORS:
-            st.warning("Markdown parse issues:")
-            for e in MD_ERRORS[:12]:
-                st.text(f"- {e}")
 
     SUBJECT_OPTIONS = sorted(SUBJECT_TO_FILES.keys(), key=lambda s: s.lower())
     if not SUBJECT_OPTIONS:
