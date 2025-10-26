@@ -1,208 +1,260 @@
 import os
 import glob
 import json
+import re
 from typing import List, Dict, Set
 import pandas as pd
 import streamlit as st
 
+# ============================ App setup ============================
 st.set_page_config(page_title="PSITE", page_icon=None, layout="wide")
 
-# ================= Global Typography Reset (consistent, study-friendly) =================
-# - Single font stack (system UI) for crisp rendering
-# - One base size/line-height, modest scale for hierarchy
-# - Overrides Streamlit headings, captions, widgets, radios, metrics, etc.
+# Universal sizing (question, answers, explanation)
 st.markdown(
     """
     <style>
-    /* ---------- Base + Variables ---------- */
     :root {
-      /* You can bump --base-size to 17px or 18px if desired */
-      --base-size: 16px;
-      --lh: 1.55;
-      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      --font-size: 1.15rem;   /* change here to scale everything */
+      --line-height: 1.55;
       --card-bg:#ffffff; --card-border:#e6e8ec; --accent:#1d4ed8; --muted:#6b7280;
-
-      /* Type scale (kept tight for dense studying) */
-      --fs-xs: clamp(12px, .78rem, 13px);
-      --fs-sm: clamp(14px, .9rem, 15px);
-      --fs-md: clamp(16px, 1rem, 17px);      /* default body */
-      --fs-lg: clamp(17px, 1.06rem, 18px);   /* question prompt */
-      --fs-xl: clamp(18px, 1.12rem, 19px);   /* small headers */
-      --fs-2xl: clamp(20px, 1.22rem, 21px);  /* main title */
     }
 
-    html, body, [data-testid="stAppViewContainer"], [data-testid="stMain"] {
-      font-family: var(--font) !important;
-      font-size: var(--fs-md) !important;
-      line-height: var(--lh) !important;
-      color: #111827;
-    }
-    .block-container { padding-top: 1.0rem !important; padding-bottom: .8rem !important; }
-
-    /* ---------- Normalize headings (prevent random size jumps) ---------- */
-    .stMarkdown h1, .stMarkdown h2, .stMarkdown h3,
-    .stMarkdown h4, .stMarkdown h5, .stMarkdown h6 {
-      font-family: var(--font) !important;
-      line-height: 1.25 !important;
-      margin: .35rem 0 .35rem 0 !important;
-      letter-spacing: .2px;
-    }
-    .stMarkdown h1 { font-size: var(--fs-2xl) !important; }
-    .stMarkdown h2 { font-size: var(--fs-xl) !important; }
-    .stMarkdown h3, .stMarkdown h4, .stMarkdown h5, .stMarkdown h6 { font-size: var(--fs-lg) !important; }
-    .stMarkdown p, .stMarkdown li, .stMarkdown span, .stText, .stCaption, .stCode {
-      font-size: var(--fs-md) !important;
-      line-height: var(--lh) !important;
-    }
-    .stCaption, .st-emotion-cache-psbm4p { /* caption normalization */
-      font-size: var(--fs-sm) !important;
-      color: var(--muted) !important;
+    html, body {
+      height: auto !important;
+      overflow-y: auto !important;
+      font-size: var(--font-size) !important;
+      line-height: var(--line-height) !important;
     }
 
-    /* ---------- Buttons/Inputs ---------- */
-    .stButton>button, .stDownloadButton>button, .stFileUploader label, .stNumberInput input, .stTextInput input, .stSelectbox, .stMultiSelect {
-      font-family: var(--font) !important;
-      font-size: var(--fs-md) !important;
-      line-height: 1.3 !important;
-    }
+    .block-container { padding-top: 1.1rem !important; padding-bottom: 0.8rem !important; }
+    [data-testid="stHorizontalBlock"] { overflow: visible !important; }
+    [data-testid="stAppViewContainer"], [data-testid="stMain"] { overflow-y: auto !important; }
 
-    /* ---------- Radio (answer choices) ---------- */
-    div[role="radiogroup"] { gap: 0 !important; }
-    div[role="radiogroup"] > label {
-      border:none !important; background:transparent !important;
-      padding:8px 6px !important; margin:3px 0 !important; border-radius:8px;
-      transition: background-color .15s ease;
-    }
-    div[role="radiogroup"] > label:hover { background:#f5f7fb !important; }
-    div[role="radiogroup"] * {
-      font-size: var(--fs-md) !important;
-      line-height: var(--lh) !important;
-    }
-    div[role="radiogroup"] input:checked + div > p,
-    div[role="radiogroup"] input:checked + div > span {
-      text-decoration: underline; text-underline-offset: 3px;
-    }
-
-    /* ---------- Top header (sticky) ---------- */
+    /* Sticky header */
     .sticky-top {
       position: sticky; top: 0; z-index: 100; background: white;
-      padding: .6rem .5rem .55rem .5rem; border-bottom: 1px solid #eef0f3;
-      box-shadow: 0 1px 0 rgba(0,0,0,0.02); margin-bottom: .4rem;
+      padding: .65rem .5rem .5rem .5rem;
+      border-bottom: 1px solid #eef0f3;
+      overflow: visible; box-shadow: 0 1px 0 rgba(0,0,0,0.02);
+      margin-bottom: .35rem;
     }
     .top-title {
       font-weight: 600; letter-spacing:.2px;
-      font-size: var(--fs-2xl) !important;
-      line-height: 1.25;
-      margin: 0 0 .3rem 0;
+      font-size: 1.05rem; line-height: 1.25;
+      margin: 0 0 .25rem 0;
     }
-    .q-progress { height: 6px; background:#eef0f3; border-radius: 999px; overflow: hidden; margin: 0 0 6px 0; }
+    .q-progress { height: 6px; background:#eef0f3; border-radius: 999px; overflow: hidden; margin: 0 0 4px 0; }
     .q-progress > div { height:100%; background: var(--accent); width:0%; transition: width .25s ease; }
 
-    /* ---------- Question card ---------- */
+    /* Header controls row */
+    .hdr-row { display:flex; gap:.5rem; justify-content:flex-end; align-items:center; flex-wrap:wrap; }
+    .stButton>button { padding:.4rem .85rem; border-radius:8px; line-height:1.25; }
+
+    /* Question container */
     .q-card { border:none; background:transparent; padding:0; box-shadow:none; }
     .q-prompt {
-      border:1px solid var(--card-border); background:#fafbfc; border-radius:10px;
-      padding:14px 12px; margin:0 0 10px 0;
-      font-size: var(--fs-lg) !important; line-height: var(--lh) !important;
+      border:1px solid var(--card-border);
+      background:#fafbfc;
+      border-radius:10px;
+      padding:12px;
+      margin:0 0 8px 0;
+      font-size: var(--font-size);
+      line-height: var(--line-height);
     }
 
-    /* ---------- Verdict + explanation ---------- */
-    .q-actions-row { display:flex; align-items:center; gap:.6rem; margin:0; }
+    /* Answers: clean, consistent font (no bubbles) */
+    div[role="radiogroup"] { gap: 0 !important; }
+    div[role="radiogroup"] > label {
+      border:none !important; background:transparent !important;
+      padding:8px 4px !important; margin:2px 0 !important; border-radius:6px;
+      transition: background-color .15s ease;
+    }
+    div[role="radiogroup"] > label:hover { background:#f5f7fb !important; }
+    div[role="radiogroup"] > label p {
+      font-size: var(--font-size) !important;
+      line-height: var(--line-height) !important;
+      margin: 0 !important;
+    }
+    div[role="radiogroup"] input:checked + div > p {
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    /* Reveal + verdict row */
+    .q-actions-row {
+      display:flex; align-items:center; gap:.6rem; margin:0;
+      font-size: var(--font-size);
+    }
     .verdict {
       display:inline-flex; align-items:center; font-weight:600;
       padding:.22rem .6rem; border-radius:999px; white-space:nowrap;
-      border:1px solid transparent; font-size: var(--fs-sm) !important;
+      border:1px solid transparent; font-size: var(--font-size);
     }
     .verdict-ok  { background:#10b9811a; color:#065f46; border-color:#34d399; }
     .verdict-err { background:#ef44441a; color:#7f1d1d; border-color:#fca5a5; }
 
+    /* Explanation on plain background */
     .explain-plain {
-      margin-top:4px; padding:10px 0 0 0; background:transparent !important;
-      border:none !important; box-shadow:none !important;
-      font-size: var(--fs-md) !important; line-height: var(--lh) !important;
+      margin-top:0; padding:10px 0 0 0;
+      background:transparent !important; border:none !important; box-shadow:none !important;
+      font-size: var(--font-size); line-height: var(--line-height);
     }
-    .stDivider { margin:10px 0 !important; }
 
-    /* ---------- Metrics ---------- */
-    .stMetric, .stMetric label, .stMetric div { font-size: var(--fs-md) !important; }
-
-    /* ---------- Sidebar ---------- */
-    section[data-testid="stSidebar"] * { font-size: var(--fs-md) !important; }
-    section[data-testid="stSidebar"] .stCaption { font-size: var(--fs-sm) !important; }
-
-    /* ---------- Tighten vertical rhythm ---------- */
-    .stMarkdown p { margin: 0 0 .4rem 0 !important; }
-    ul, ol { margin-top: .2rem !important; margin-bottom: .4rem !important; }
+    .stDivider { margin:8px 0 !important; }
+    .stMarkdown p { margin-bottom:0.35rem; }
     </style>
     """,
     unsafe_allow_html=True
 )
 
+# ============================ Data & parsing ============================
+DATA_FOLDER = "data"
+MD_FOLDER = os.path.join(DATA_FOLDER, "questions")
+
+# Required fields we maintain internally
 REQUIRED_COLS = ["id","subject","stem","A","B","C","D","E","correct","explanation"]
-CSV_FOLDER = "data"
 
-# ===== CSV Handling =====
-def _read_csv_strict(path: str) -> pd.DataFrame:
-    df = pd.read_csv(path)
-    missing = [c for c in REQUIRED_COLS if c not in df.columns]
+# Front-matter pattern: lines between --- ... --- at the top
+FRONTMATTER_RE = re.compile(r"^---\s*([\s\S]*?)\s*---\s*([\s\S]*)$", re.MULTILINE)
+# Explanation delimiter inside body (optional)
+EXPL_SPLIT_RE = re.compile(r"\n\s*<!--\s*EXPLANATION\s*-->\s*\n", re.IGNORECASE)
+
+def _parse_front_matter(text: str) -> (Dict[str, str], str):
+    """
+    Returns (meta_dict, body_text). Raises ValueError if front-matter is missing.
+    """
+    m = FRONTMATTER_RE.match(text)
+    if not m:
+        raise ValueError("Front-matter block not found. Expected a leading '--- ... ---' section.")
+    fm_block, body = m.group(1), m.group(2)
+    meta = {}
+    for line in fm_block.splitlines():
+        if ":" in line:
+            k, v = line.split(":", 1)
+            meta[k.strip()] = v.strip()
+    return meta, body.strip()
+
+def _split_stem_explanation(body: str) -> (str, str):
+    """
+    Splits body into (stem, explanation) at <!-- EXPLANATION --> marker.
+    If missing, explanation is "" and entire body is stem.
+    """
+    parts = EXPL_SPLIT_RE.split(body, maxsplit=1)
+    if len(parts) == 2:
+        stem, explanation = parts[0].strip(), parts[1].strip()
+    else:
+        stem, explanation = body.strip(), ""
+    return stem, explanation
+
+def _read_md_question(path: str) -> Dict[str, str]:
+    with open(path, "r", encoding="utf-8") as f:
+        raw = f.read()
+    meta, body = _parse_front_matter(raw)
+
+    # Normalize fields
+    rec = {
+        "id": meta.get("id","").strip(),
+        "subject": meta.get("subject","").strip(),
+        "A": meta.get("A","").strip(),
+        "B": meta.get("B","").strip(),
+        "C": meta.get("C","").strip(),
+        "D": meta.get("D","").strip(),
+        "E": meta.get("E","").strip(),
+        "correct": meta.get("correct","").strip().upper(),
+    }
+    stem, explanation = _split_stem_explanation(body)
+    rec["stem"] = stem
+    rec["explanation"] = explanation
+
+    # Validate
+    missing = [k for k in ["id", "subject", "correct"] if not rec.get(k)]
     if missing:
-        raise ValueError(f"{os.path.basename(path)} missing: {missing}")
-    df = df[REQUIRED_COLS].copy()
-    for c in ["id","subject","A","B","C","D","E","stem","explanation","correct"]:
-        df[c] = df[c].astype(str).str.strip()
-    df["correct"] = df["correct"].str.upper()
-    return df
+        raise ValueError(f"{os.path.basename(path)} missing required meta: {missing}")
+    for choice in ["A","B","C","D","E"]:
+        if rec[choice] == "":
+            raise ValueError(f"{os.path.basename(path)} missing choice '{choice}'")
 
-def discover_subjects_from_csvs(folder: str) -> Dict[str, Set[str]]:
-    pattern = os.path.join(folder, "*.csv")
-    files = glob.glob(pattern)
-    subj_map: Dict[str, Set[str]] = {}
+    return rec
+
+def _read_all_markdown(folder: str) -> pd.DataFrame:
+    files = glob.glob(os.path.join(folder, "*.md"))
+    rows = []
     for f in files:
         try:
-            df = _read_csv_strict(f)
+            rows.append(_read_md_question(f))
+        except Exception as e:
+            # If a single file is malformed, skip it but continue
+            print(f"[WARN] Skipping {os.path.basename(f)}: {e}")
+    if not rows:
+        return pd.DataFrame(columns=REQUIRED_COLS)
+    df = pd.DataFrame(rows)
+    # Coerce to required columns in order
+    for col in REQUIRED_COLS:
+        if col not in df.columns:
+            df[col] = ""
+    # Type/whitespace normalization
+    for c in REQUIRED_COLS:
+        df[c] = df[c].astype(str).strip()
+    df["correct"] = df["correct"].str.upper()
+    # Drop duplicate IDs across files (keep first)
+    df = df.drop_duplicates(subset=["id"], keep="first").reset_index(drop=True)
+    return df
+
+# Build subject map from content
+def discover_subjects_from_markdown(folder: str) -> Dict[str, Set[str]]:
+    files = glob.glob(os.path.join(folder, "*.md"))
+    subj_to_files: Dict[str, Set[str]] = {}
+    for f in files:
+        try:
+            rec = _read_md_question(f)
         except Exception:
             continue
-        for s in df["subject"].dropna().astype(str).str.strip().unique():
-            subj_map.setdefault(s, set()).add(f)
-    return subj_map
+        subj = rec.get("subject", "").strip()
+        if subj:
+            subj_to_files.setdefault(subj, set()).add(f)
+    return subj_to_files
 
-SUBJECT_TO_FILES = discover_subjects_from_csvs(CSV_FOLDER)
+# ============================ Data model ============================
+SUBJECT_TO_FILES = discover_subjects_from_markdown(MD_FOLDER)
 SUBJECT_OPTIONS = sorted(SUBJECT_TO_FILES.keys(), key=lambda s: s.lower())
 
 def _load_all_topics() -> pd.DataFrame:
-    frames = []
-    for files in SUBJECT_TO_FILES.values():
-        for f in files:
-            try:
-                frames.append(_read_csv_strict(f))
-            except Exception:
-                pass
-    if not frames:
-        st.error("No valid CSVs found.")
+    df = _read_all_markdown(MD_FOLDER)
+    if df.empty:
+        st.error(f"No valid Markdown questions found in `{MD_FOLDER}`.")
         st.stop()
-    df_all = pd.concat(frames, ignore_index=True)
-    return df_all.drop_duplicates(subset=["id"], keep="first")
+    return df
 
 def load_questions_for_subjects(selected_subjects: List[str], random_all: bool) -> pd.DataFrame:
     if random_all:
         return _load_all_topics()
     if not selected_subjects:
         return pd.DataFrame(columns=REQUIRED_COLS)
-    frames = []
+
+    # Read only files that have the requested subjects
     files_to_read = set()
     for subj in selected_subjects:
         files_to_read |= SUBJECT_TO_FILES.get(subj, set())
+
+    rows = []
     for f in files_to_read:
         try:
-            df = _read_csv_strict(f)
-            frames.append(df[df["subject"].isin(selected_subjects)])
+            rec = _read_md_question(f)
         except Exception:
-            pass
-    if not frames:
+            continue
+        if rec.get("subject","").strip() in selected_subjects:
+            rows.append(rec)
+    if not rows:
         return pd.DataFrame(columns=REQUIRED_COLS)
-    return pd.concat(frames, ignore_index=True).drop_duplicates(subset=["id"], keep="first")
+    df = pd.DataFrame(rows)
+    for c in REQUIRED_COLS:
+        if c not in df.columns:
+            df[c] = ""
+        df[c] = df[c].astype(str).str.strip()
+    df["correct"] = df["correct"].str.upper()
+    return df.drop_duplicates(subset=["id"], keep="first").reset_index(drop=True)
 
-# ===== App Logic =====
+# ============================ Quiz state & UI helpers ============================
 def init_session_state(n:int):
     st.session_state.answers = [None]*n
     st.session_state.revealed = [False]*n
@@ -219,6 +271,7 @@ def render_header(n:int, title_text:str):
     pos = st.session_state.current
     pct = int(((pos+1)/max(n,1))*100)
     st.markdown("<div class='sticky-top'>", unsafe_allow_html=True)
+
     left,right = st.columns([6,6])
     with left:
         st.markdown(f"<div class='top-title'>{title_text}</div>", unsafe_allow_html=True)
@@ -232,39 +285,41 @@ def render_header(n:int, title_text:str):
         with c3: st.button("Skip", key="hdr_skip", on_click=_skip, args=(n,), disabled=(pos==n-1))
         with c4: st.button("Finish", key="hdr_finish", on_click=_finish)
         st.markdown("</div>", unsafe_allow_html=True)
+
     st.markdown("</div>", unsafe_allow_html=True)
 
 def render_question(pool: pd.DataFrame):
     i = st.session_state.current
     row = pool.iloc[i]
+
     st.markdown("<div class='q-card'>", unsafe_allow_html=True)
+    # Stem
     st.markdown(f"<div class='q-prompt'>{row['stem']}</div>", unsafe_allow_html=True)
 
+    # Choices
     letters = ["A","B","C","D","E"]
-    # Ensure stable default index for radio:
-    default_index = 0 if st.session_state.answers[i] not in letters else letters.index(st.session_state.answers[i])
+    fmt = lambda L: str(row[L])
     selected = st.radio(
-        label="", options=letters, format_func=lambda L: str(row[L]),
-        index=default_index, key=f"radio_choice_{i}", label_visibility="collapsed"
+        label="", options=letters, format_func=fmt,
+        index=(letters.index(st.session_state.answers[i]) if st.session_state.answers[i] in letters else None),
+        label_visibility="collapsed", key=f"radio_choice_{i}"
     )
     st.session_state.answers[i] = selected
 
+    # Reveal row (minimal verdict inline)
     st.markdown("<div class='q-actions-row'>", unsafe_allow_html=True)
-    col_btn,col_v = st.columns([1,6], gap="small")
+    col_btn, col_v = st.columns([1,6], gap="small")
     with col_btn:
         st.button("Reveal", key=f"btn_reveal_{i}", on_click=_reveal, args=(i,))
     with col_v:
         if st.session_state.revealed[i]:
             correct = row["correct"].strip().upper()
-            verdict_html = (
-                "<span class='verdict verdict-ok'>Correct</span>"
-                if st.session_state.answers[i] == correct
-                else "<span class='verdict verdict-err'>Incorrect</span>"
-            )
-            st.markdown(verdict_html, unsafe_allow_html=True)
+            verdict = "<span class='verdict verdict-ok'>Correct</span>" if selected == correct else "<span class='verdict verdict-err'>Incorrect</span>"
+            st.markdown(verdict, unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
-    if st.session_state.revealed[i]:
+    # Explanation (plain background)
+    if st.session_state.revealed[i] and str(row["explanation"]).strip():
         st.markdown("<div class='explain-plain'>", unsafe_allow_html=True)
         st.markdown(row["explanation"], unsafe_allow_html=False)
         st.markdown("</div>", unsafe_allow_html=True)
@@ -279,41 +334,50 @@ def render_results(pool: pd.DataFrame):
     is_correct = [a == c and a is not None and r for a,c,r in zip(answers, correct_letters, revealed)]
     total_correct = sum(is_correct)
     total_revealed = sum(1 for r in revealed if r)
+
     st.markdown("## Results")
     cols = st.columns(3)
     with cols[0]: st.metric("Answered", f"{total_revealed}/{n}")
     with cols[1]: st.metric("Correct", f"{total_correct}/{n}")
     with cols[2]: st.metric("Score", f"{int(100*total_correct/max(n,1))}%")
+
     if st.button("Restart"):
         init_session_state(len(pool))
 
+# ============================ Sidebar / Controls ============================
 with st.sidebar:
     st.header("Build Quiz")
+
     if not SUBJECT_OPTIONS:
-        st.error(f"No subjects found in '{CSV_FOLDER}'. Ensure CSVs have a 'subject' column.")
+        st.error(f"No subjects found in `{MD_FOLDER}`. "
+                 f"Add Markdown files like `{MD_FOLDER}/topic-001.md` with front-matter.")
         st.stop()
 
     random_all = st.toggle("Random from all topics", value=False)
     pick_subjects = st.multiselect("Subject", SUBJECT_OPTIONS, disabled=random_all)
-    df = load_questions_for_subjects(pick_subjects, random_all=random_all)
 
+    df = load_questions_for_subjects(pick_subjects, random_all=random_all)
     total = len(df)
     min_q = 1 if total >= 1 else 0
     max_q = total if total >= 1 else 1
     default_q = min(20, max_q)
     step_q = 1 if max_q < 10 else 5
+
     n_questions = st.number_input("Number of Questions", min_value=min_q, max_value=max_q, step=step_q, value=default_q)
 
     if st.button("Start ▶"):
         if df.empty:
-            st.warning("No questions available.")
+            st.warning("No questions available for the current selection.")
         else:
-            pool = df.sample(n=int(n_questions), random_state=42).reset_index(drop=True)
+            # Sample or shuffle deterministically for stable previews
+            pool = df.sample(n=int(n_questions), random_state=42).reset_index(drop=True) \
+                    if len(df) > n_questions else df.sample(frac=1.0, random_state=42).reset_index(drop=True)
             st.session_state.pool = pool
             init_session_state(len(pool))
             st.session_state.random_all = random_all
             st.session_state.selected_subjects = pick_subjects
 
+# ============================ Main stage ============================
 pool = st.session_state.get("pool", None)
 if pool is None:
     st.write("Use the sidebar to start a quiz.")
