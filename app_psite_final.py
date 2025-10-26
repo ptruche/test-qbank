@@ -9,33 +9,36 @@ import streamlit.components.v1 as components
 
 st.set_page_config(page_title="PSITE", page_icon=None, layout="wide")
 
-# ============================= Styling =============================
+# ============================= Base UI CSS (neutral everywhere) =============================
 st.markdown("""
 <style>
-:root {
-  --font-size: 1.15rem;
-  --line-height: 1.55;
-  --card-bg:#ffffff; --card-border:#e6e8ec; --accent:#1d4ed8; --muted:#6b7280;
-}
-html, body { height:auto!important; overflow-y:auto!important; font-size:var(--font-size)!important; line-height:var(--line-height)!important; }
+:root { --card-bg:#ffffff; --card-border:#e6e8ec; --accent:#1d4ed8; --muted:#6b7280; }
+html, body { height:auto!important; overflow-y:auto!important; }
 .block-container { padding-top:1rem!important; padding-bottom:0.6rem!important; }
 
+/* Header / progress */
 .sticky-top { position:sticky; top:0; z-index:100; background:#fff; border-bottom:1px solid #eef0f3; padding:.6rem .5rem; }
 .top-title { font-weight:600; font-size:1.05rem; margin-bottom:.25rem; }
 .q-progress { height:6px; background:#eef0f3; border-radius:999px; overflow:hidden; margin:0 0 4px 0; }
 .q-progress>div { height:100%; background:var(--accent); width:0%; transition:width .25s ease; }
 
-.q-prompt { border:1px solid var(--card-border); background:#fafbfc; border-radius:10px; padding:12px; margin-bottom:6px; font-size:var(--font-size); line-height:var(--line-height); }
+/* Neutral question prompt */
+.q-prompt { border:1px solid var(--card-border); background:#fafbfc; border-radius:10px; padding:12px; margin-bottom:6px; }
+
+/* Neutral answers (no bubbles) */
 div[role="radiogroup"] { gap:0!important; }
 div[role="radiogroup"]>label { border:none!important; background:transparent!important; padding:8px 4px!important; margin:2px 0!important; border-radius:6px; }
 div[role="radiogroup"]>label:hover { background:#f5f7fb!important; }
-div[role="radiogroup"]>label p { font-size:var(--font-size)!important; line-height:var(--line-height)!important; margin:0!important; }
 
+/* Verdict (compact, neutral) */
 .verdict { font-weight:600; padding:.22rem .6rem; border-radius:999px; border:1px solid transparent; display:inline-flex; align-items:center; }
 .verdict-ok  { background:#10b9811a; color:#065f46; border-color:#34d399; }
 .verdict-err { background:#ef44441a; color:#7f1d1d; border-color:#fca5a5; }
 
-.explain-plain { padding-top:8px; background:transparent!important; border:none!important; box-shadow:none!important; font-size:var(--font-size); line-height:var(--line-height); }
+/* Plain container for explanation; no card/bubble */
+.explain-plain { padding-top:8px; background:transparent!important; border:none!important; box-shadow:none!important; }
+
+/* NOTHING colorful here: all color/creative styles are scoped in .explain-scope below (added at render time) */
 </style>
 """, unsafe_allow_html=True)
 
@@ -44,38 +47,74 @@ DATA_FOLDER = "data"
 MD_FOLDER = os.path.join(DATA_FOLDER, "questions")
 REQUIRED_COLS = ["id","subject","stem","A","B","C","D","E","correct","explanation"]
 
-# ============================= SVG renderer =============================
+# ============================= SVG rendering + Scoped styling =============================
 SVG_BLOCK_RE = re.compile(r"(<svg[\s\S]*?</svg>)", re.IGNORECASE)
 
+# Styles that ONLY apply inside the revealed explanation (scoped via .explain-scope)
+EXPLAIN_SCOPE_CSS = """
+<style>
+.explain-scope { font-family: 'Segoe UI', Arial, sans-serif; font-size: 1.02rem; line-height: 1.55; color:#222; }
+.explain-scope h3     { margin:.4rem 0 .25rem 0; font-weight:700; }
+.explain-scope .hdr-blue  { color:#1d4ed8; }
+.explain-scope .hdr-green { color:#059669; }
+.explain-scope .hdr-violet{ color:#7c3aed; }
+.explain-scope .hdr-rose  { color:#e11d48; }
+
+/* Table with marker-like color accents */
+.explain-scope table    { border-collapse:collapse; width:100%; margin:.4rem 0; border:2px solid #444; }
+.explain-scope th, td   { border:1px solid #d1d5db; padding:.45rem .5rem; text-align:center; }
+.explain-scope thead th { background:#1d4ed8; color:white; border-color:#1d4ed8; }
+.explain-scope tr:nth-child(even) { background:#f9fafb; }
+.explain-scope .t-blue  { color:#0b5394; }
+.explain-scope .t-red   { color:#b32400; }
+
+/* Gentle list spacing */
+.explain-scope ul { margin:.2rem 0 .2rem 1.1rem; }
+
+/* Any svg is in its own iframe via components.html and already self-styled (colors/dashes inline). */
+</style>
+"""
+
 def render_explanation_block(explain_text: str):
-    """Render Markdown explanation with any inline <svg>…</svg> blocks as actual graphics."""
+    """
+    Renders the explanation so that:
+      - It is wrapped in a scoped container (.explain-scope) whose CSS is injected here,
+      - Inline <svg> blocks render as graphics (via components.html),
+      - Non-SVG chunks render as normal Markdown.
+    """
     if not explain_text or not str(explain_text).strip():
         return
+
+    # Open scope container & inject scoped CSS
+    st.markdown("<div class='explain-scope'>", unsafe_allow_html=True)
+    st.markdown(EXPLAIN_SCOPE_CSS, unsafe_allow_html=True)
+
     parts = SVG_BLOCK_RE.split(explain_text)
     for chunk in parts:
-        if not chunk.strip():
+        if not chunk or not chunk.strip():
             continue
-        if chunk.strip().lower().startswith("<svg"):
+        if chunk.lstrip().lower().startswith("<svg"):
             m = re.search(r'height="(\d+)"', chunk, re.IGNORECASE)
             height = int(m.group(1)) if m else 320
             components.html(chunk, height=height + 20, scrolling=False)
         else:
             st.markdown(chunk, unsafe_allow_html=False)
 
+    st.markdown("</div>", unsafe_allow_html=True)
+
 # ============================= Markdown loaders =============================
-# front matter: --- ... --- at top; the body may have <!-- EXPLANATION --> separator
 FRONTMATTER_RE = re.compile(r"^---\s*([\s\S]*?)\s*---\s*([\s\S]*)$", re.MULTILINE)
-EXPL_SPLIT_RE = re.compile(r"\n\s*<!--\s*EXPLANATION\s*-->\s*\n", re.IGNORECASE)
+EXPL_SPLIT_RE  = re.compile(r"\n\s*<!--\s*EXPLANATION\s*-->\s*\n", re.IGNORECASE)
 
 def _parse_front_matter(text: str):
     m = FRONTMATTER_RE.match(text)
     if not m:
-        raise ValueError("Missing front-matter block '--- ... ---'")
+        raise ValueError("Missing front-matter '--- ... ---'")
     fm, body = m.group(1), m.group(2)
     meta = {}
     for line in fm.splitlines():
         if ":" in line:
-            k, v = line.split(":", 1)
+            k,v = line.split(":",1)
             meta[k.strip()] = v.strip()
     return meta, body.strip()
 
@@ -102,13 +141,9 @@ def _read_md_question(path: str) -> Dict[str, str]:
         "stem": stem,
         "explanation": explanation,
     }
-    # validations
-    missing = [k for k in ["id","subject","correct"] if not rec[k]]
-    if missing:
-        raise ValueError(f"{os.path.basename(path)} missing: {missing}")
-    for ch in ["A","B","C","D","E"]:
-        if rec[ch] == "":
-            raise ValueError(f"{os.path.basename(path)} missing choice '{ch}'")
+    missing = [k for k in ["id","subject","correct"]] + [c for c in ["A","B","C","D","E"] if rec[c]==""]
+    if any([not rec["id"], not rec["subject"], not rec["correct"]]) or any(rec[c]=="" for c in ["A","B","C","D","E"]):
+        raise ValueError(f"{os.path.basename(path)} has missing required fields.")
     return rec
 
 def _read_all_markdown(folder: str) -> pd.DataFrame:
@@ -142,7 +177,7 @@ def discover_subjects_from_markdown(folder: str) -> Dict[str, Set[str]]:
             subj_to_files.setdefault(subj, set()).add(f)
     return subj_to_files
 
-# ============================= CSV loaders (optional) =============================
+# ============================= (Optional) CSV support =============================
 def _read_csv_strict(path: str) -> pd.DataFrame:
     df = pd.read_csv(path)
     missing = [c for c in REQUIRED_COLS if c not in df.columns]
@@ -167,7 +202,7 @@ def discover_subjects_from_csvs(folder: str) -> Dict[str, Set[str]]:
     return subj_to_files
 
 # ============================= Subject map (MD + CSV) =============================
-MD_SUBJECTS = discover_subjects_from_markdown(MD_FOLDER)
+MD_SUBJECTS  = discover_subjects_from_markdown(MD_FOLDER)
 CSV_SUBJECTS = discover_subjects_from_csvs(DATA_FOLDER)
 
 SUBJECT_TO_FILES: Dict[str, Set[str]] = {}
@@ -180,11 +215,9 @@ SUBJECT_OPTIONS = sorted(SUBJECT_TO_FILES.keys(), key=lambda s: s.lower())
 
 def _load_all_topics() -> pd.DataFrame:
     frames = []
-    # all MD
     df_md = _read_all_markdown(MD_FOLDER)
     if not df_md.empty:
         frames.append(df_md)
-    # all CSV
     for f in set().union(*CSV_SUBJECTS.values()) if CSV_SUBJECTS else []:
         try:
             frames.append(_read_csv_strict(f))
@@ -198,16 +231,12 @@ def _load_all_topics() -> pd.DataFrame:
 def load_questions_for_subjects(selected_subjects: List[str], random_all: bool) -> pd.DataFrame:
     if random_all:
         return _load_all_topics()
-
     if not selected_subjects:
         return pd.DataFrame(columns=REQUIRED_COLS)
-
     frames = []
-    # from Markdown
     df_md = _read_all_markdown(MD_FOLDER)
     if not df_md.empty:
         frames.append(df_md[df_md["subject"].isin(selected_subjects)])
-    # from CSV
     files_to_read = set()
     for subj in selected_subjects:
         files_to_read |= CSV_SUBJECTS.get(subj, set())
@@ -217,7 +246,6 @@ def load_questions_for_subjects(selected_subjects: List[str], random_all: bool) 
             frames.append(df[df["subject"].isin(selected_subjects)])
         except Exception:
             pass
-
     if not frames:
         return pd.DataFrame(columns=REQUIRED_COLS)
     out = pd.concat(frames, ignore_index=True)
@@ -225,9 +253,9 @@ def load_questions_for_subjects(selected_subjects: List[str], random_all: bool) 
 
 # ============================= Quiz state & UI =============================
 def init_session_state(n:int):
-    st.session_state.answers = [None]*n
+    st.session_state.answers  = [None]*n
     st.session_state.revealed = [False]*n
-    st.session_state.current = 0
+    st.session_state.current  = 0
     st.session_state.finished = False
 
 def render_header(n:int, title_text:str):
@@ -250,7 +278,6 @@ def render_header(n:int, title_text:str):
 def render_question(pool: pd.DataFrame):
     i = st.session_state.current
     row = pool.iloc[i]
-
     st.markdown(f"<div class='q-prompt'>{row['stem']}</div>", unsafe_allow_html=True)
 
     letters = ["A","B","C","D","E"]
@@ -280,7 +307,7 @@ def render_question(pool: pd.DataFrame):
 
     if st.session_state.revealed[i] and str(row["explanation"]).strip():
         st.markdown("<div class='explain-plain'>", unsafe_allow_html=True)
-        render_explanation_block(str(row["explanation"]))
+        render_explanation_block(str(row["explanation"]))  # <-- colorful/creative styles scoped here only
         st.markdown("</div>", unsafe_allow_html=True)
 
 def render_results(pool: pd.DataFrame):
@@ -298,8 +325,9 @@ def render_results(pool: pd.DataFrame):
 with st.sidebar:
     st.header("Build Quiz")
 
+    SUBJECT_OPTIONS = sorted(SUBJECT_TO_FILES.keys(), key=lambda s: s.lower())
     if not SUBJECT_OPTIONS:
-        st.error(f"No subjects found. Add Markdown files to `{MD_FOLDER}` (or CSVs to `{DATA_FOLDER}`) and reload.")
+        st.error(f"No subjects found. Add Markdown to `{MD_FOLDER}` (or CSVs to `{DATA_FOLDER}`) and reload.")
         st.stop()
 
     random_all = st.toggle("Random from all topics", value=False)
