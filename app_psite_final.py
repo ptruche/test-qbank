@@ -14,13 +14,31 @@ st.markdown("""
 <style>
 :root { --card-bg:#ffffff; --card-border:#e6e8ec; --accent:#1d4ed8; --muted:#6b7280; }
 html, body { height:auto!important; overflow-y:auto!important; }
-.block-container { padding-top:1rem!important; padding-bottom:0.6rem!important; }
+.block-container { padding-top:1.1rem!important; padding-bottom:0.7rem!important; }
 
 /* Header / progress */
-.sticky-top { position:sticky; top:0; z-index:100; background:#fff; border-bottom:1px solid #eef0f3; padding:.6rem .5rem; }
-.top-title { font-weight:600; font-size:1.05rem; margin-bottom:.25rem; }
-.q-progress { height:6px; background:#eef0f3; border-radius:999px; overflow:hidden; margin:0 0 4px 0; }
+.sticky-top {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background: #fff;
+  border-bottom: 1px solid #eef0f3;
+  padding: 0.85rem 0.6rem 0.6rem; /* more top padding prevents clipping */
+  overflow: visible;              /* allow content to render fully */
+  box-sizing: border-box;
+}
+.top-title { font-weight:600; font-size:1.06rem; margin:0 0 .3rem 0; }
+.q-progress { height:6px; background:#eef0f3; border-radius:999px; overflow:hidden; margin:0 0 6px 0; }
 .q-progress>div { height:100%; background:var(--accent); width:0%; transition:width .25s ease; }
+
+/* Buttons in sticky header */
+.sticky-top .stButton>button {
+  padding: 0.48rem 0.9rem !important;
+  line-height: 1.2 !important;
+  min-height: 38px !important;
+  border-radius: 8px !important;
+  vertical-align: middle;
+}
 
 /* Neutral question prompt */
 .q-prompt { border:1px solid var(--card-border); background:#fafbfc; border-radius:10px; padding:12px; margin-bottom:6px; }
@@ -37,8 +55,6 @@ div[role="radiogroup"]>label:hover { background:#f5f7fb!important; }
 
 /* Plain container for explanation; no card/bubble */
 .explain-plain { padding-top:8px; background:transparent!important; border:none!important; box-shadow:none!important; }
-
-/* NOTHING colorful here: all color/creative styles are scoped in .explain-scope below (added at render time) */
 </style>
 """, unsafe_allow_html=True)
 
@@ -103,8 +119,8 @@ def render_explanation_block(explain_text: str):
     st.markdown("</div>", unsafe_allow_html=True)
 
 # ============================= Markdown loaders =============================
-FRONTMATTER_RE = re.compile(r"^---\s*([\s\S]*?)\s*---\s*([\s\S]*)$", re.MULTILINE)
-EXPL_SPLIT_RE  = re.compile(r"\n\s*<!--\s*EXPLANATION\s*-->\s*\n", re.IGNORECASE)
+FRONTMATTER_RE = re.compile(r"^---\\s*([\\s\\S]*?)\\s*---\\s*([\\s\\S]*)$", re.MULTILINE)
+EXPL_SPLIT_RE  = re.compile(r"\\n\\s*<!--\\s*EXPLANATION\\s*-->\\s*\\n", re.IGNORECASE)
 
 def _parse_front_matter(text: str):
     m = FRONTMATTER_RE.match(text)
@@ -262,6 +278,10 @@ def render_header(n:int, title_text:str):
     pos = st.session_state.current
     pct = int(((pos + 1) / max(n,1)) * 100)
     st.markdown("<div class='sticky-top'>", unsafe_allow_html=True)
+
+    # Tiny spacer avoids sub-pixel clipping at the very top
+    st.markdown("<div style='height:2px'></div>", unsafe_allow_html=True)
+
     left, right = st.columns([6,6])
     with left:
         st.markdown(f"<div class='top-title'>{title_text}</div>", unsafe_allow_html=True)
@@ -307,7 +327,7 @@ def render_question(pool: pd.DataFrame):
 
     if st.session_state.revealed[i] and str(row["explanation"]).strip():
         st.markdown("<div class='explain-plain'>", unsafe_allow_html=True)
-        render_explanation_block(str(row["explanation"]))  # <-- colorful/creative styles scoped here only
+        render_explanation_block(str(row["explanation"]))  # colorful/creative styles scoped here only
         st.markdown("</div>", unsafe_allow_html=True)
 
 def render_results(pool: pd.DataFrame):
