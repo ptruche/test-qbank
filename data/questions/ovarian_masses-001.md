@@ -9,12 +9,13 @@ D: Germ cell tumors account for the majority of ovarian neoplasms in girls under
 E: The malignancy risk increases linearly with age during childhood
 ---
 
-A 13-year-old girl presents with abdominal fullness and a right adnexal mass on ultrasound. You recall that ovarian masses in children differ significantly in frequency and malignant potential compared with adults. Which of the following statements best reflects the epidemiology of ovarian neoplasms in children and adolescents?
+A 13-year-old girl presents with abdominal fullness and a right adnexal mass on ultrasound. You recall that ovarian masses in children differ substantially from those in adults in both frequency and histologic type. Which of the following statements best reflects the epidemiology of ovarian neoplasms in children and adolescents?
 
 <!-- EXPLANATION -->
 
-Ovarian masses in children occur at an incidence of roughly five per 100,000 per year, and approximately half are neoplastic. Only 10–20% of neoplastic lesions are malignant. Among patients younger than 20 years, germ cell tumors predominate, representing about 75% of neoplasms. In contrast, epithelial tumors dominate the adult population and are more often advanced at presentation.  
-The proportion of malignant histology is highest in prepubertal children (1–8 years), approaching 22%, compared with approximately 10% in adolescents. True malignancy in infancy is rare. These differences reflect the shift from germ cell to epithelial predominance with reproductive maturity.
+Ovarian masses in children are uncommon, occurring at an estimated rate of five per 100,000 per year, with roughly half representing true neoplasms. The proportion of malignant histology among neoplastic lesions is approximately 10–20%. In girls under 20 years of age, germ cell tumors constitute about three-quarters of all ovarian neoplasms, in contrast to the adult population in which epithelial tumors dominate. This distribution explains the markedly better prognosis of pediatric ovarian malignancy compared with adult epithelial carcinoma, which often presents at advanced stage and carries limited curative potential.
+
+The incidence of ovarian tumors increases with age through adolescence, but malignancy risk does not rise in parallel. Data from large registry analyses show that the age-adjusted incidence of malignant ovarian tumors is approximately 0.1 per 100,000 in children younger than nine years and 1.0 per 100,000 in those aged ten to nineteen—still roughly ten times lower than adults. Malignancy is exceedingly rare before five years of age. The highest relative risk for malignancy occurs in the prepubertal age group (one to eight years), in which about 22% of tumors are malignant, compared with 10% in older girls. These differences reflect developmental changes in gonadal maturation and the prevalence of benign functional cysts during adolescence.
 
 <svg width="760" height="290" xmlns="http://www.w3.org/2000/svg" aria-label="Ovarian tumor patterns by age">
   <defs>
@@ -42,15 +43,23 @@ The proportion of malignant histology is highest in prepubertal children (1–8 
     Incidence per 100k/year:  &lt;9 y ≈ 0.1 · 10–19 y ≈ 1.0 · Adults ≈ 11
   </text>
   <text x="60"  y="225" style="font-family:'Segoe UI',sans-serif;font-size:15px;fill:#333;">
-    Malignant histology overall 10–20%; higher in prepubertal children (~22%) than adolescents (~10%).
+    Malignant histology overall 10–20%; proportion higher prepubertally (~22%) than adolescents (~10%).
   </text>
 </svg>
 
+Certain genetic and syndromic associations modify risk and tumor type.  
+Patients with **DICER1 syndrome** have a predisposition to Sertoli–Leydig cell tumors.  
+**Peutz–Jeghers syndrome** may be associated with granulosa cell and sex cord–stromal tumors with annular tubules, as well as ovarian cystadenomas.  
+**Ollier disease** (multiple enchondromatosis) and **Maffucci syndrome** (enchondromatosis with hemangiomas) can be associated with juvenile granulosa cell and Sertoli–Leydig tumors.  
+**McCune–Albright syndrome** (café-au-lait macules, fibrous dysplasia, and gonadotropin-independent precocity) produces recurrent functional follicular cysts related to cyclical estradiol secretion.  
+**Basal cell nevus syndrome** is linked to ovarian fibromas, while **Chédiak–Higashi syndrome** may be associated with sclerosing stromal tumors.
+
 | Age group    | Incidence (/100k/yr) | Predominant histology | Malignant proportion |
 |---------------|---------------------:|------------------------|----------------------:|
-| \<9 years     | 0.1                  | Germ cell              | Rare, \<5 yrs extremely uncommon |
-| 10–19 years   | 1.0                  | Germ cell              | ~10% malignant       |
+| \<9 years     | 0.1                  | Germ cell              | Rare; malignancy before 5 yr is exceptional |
+| 10–19 years   | 1.0                  | Germ cell              | ~10 % malignant       |
 | Adults        | 11                   | Epithelial             | Often advanced at presentation |
 
-Germ cell tumors dominate the pediatric and adolescent age groups, whereas epithelial carcinomas become prevalent after puberty.  
-**Correct answer: D.**
+Germ cell tumors dominate the pediatric age group and account for most malignant ovarian neoplasms encountered by pediatric surgeons. Epithelial tumors are rare before puberty but become the major histologic subtype in adults, driving the poorer outcomes of adult ovarian carcinoma.
+
+**Correct answer: D. Germ cell tumors account for the majority of ovarian neoplasms in girls under 20.**
