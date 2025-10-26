@@ -2,7 +2,7 @@ import os
 import glob
 import json
 import re
-from typing import List, Dict, Set
+from typing import List, Dict, Set, Tuple
 import pandas as pd
 import streamlit as st
 import streamlit.components.v1 as components
@@ -58,9 +58,15 @@ div[role="radiogroup"]>label:hover { background:#f5f7fb!important; }
 </style>
 """, unsafe_allow_html=True)
 
-# ============================= Constants =============================
-DATA_FOLDER = "data"
-MD_FOLDER = os.path.join(DATA_FOLDER, "questions")
+# ============================= Resolve data paths robustly =============================
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DATA_FOLDER = os.getenv("QBANK_DATA_DIR", os.path.join(BASE_DIR, "data"))
+MD_FOLDER = os.getenv("QBANK_MD_DIR", os.path.join(DATA_FOLDER, "questions"))
+
+# Create folders if missing (safe no-op locally; helps in cloud)
+os.makedirs(DATA_FOLDER, exist_ok=True)
+os.makedirs(MD_FOLDER, exist_ok=True)
+
 REQUIRED_COLS = ["id","subject","stem","A","B","C","D","E","correct","explanation"]
 
 # ============================= SVG rendering + Scoped styling =============================
@@ -87,21 +93,14 @@ EXPLAIN_SCOPE_CSS = """
 /* Gentle list spacing */
 .explain-scope ul { margin:.2rem 0 .2rem 1.1rem; }
 
-/* Any svg is in its own iframe via components.html and already self-styled (colors/dashes inline). */
+/* Any svg is in its own iframe via components.html and already self-styled. */
 </style>
 """
 
 def render_explanation_block(explain_text: str):
-    """
-    Renders the explanation so that:
-      - It is wrapped in a scoped container (.explain-scope) whose CSS is injected here,
-      - Inline <svg> blocks render as graphics (via components.html),
-      - Non-SVG chunks render as normal Markdown.
-    """
+    """Render explanation safely, with scoped CSS and proper SVG handling."""
     if not explain_text or not str(explain_text).strip():
         return
-
-    # Open scope container & inject scoped CSS
     st.markdown("<div class='explain-scope'>", unsafe_allow_html=True)
     st.markdown(EXPLAIN_SCOPE_CSS, unsafe_allow_html=True)
 
@@ -119,8 +118,10 @@ def render_explanation_block(explain_text: str):
     st.markdown("</div>", unsafe_allow_html=True)
 
 # ============================= Markdown loaders =============================
-FRONTMATTER_RE = re.compile(r"^---\\s*([\\s\\S]*?)\\s*---\\s*([\\s\\S]*)$", re.MULTILINE)
-EXPL_SPLIT_RE  = re.compile(r"\\n\\s*<!--\\s*EXPLANATION\\s*-->\\s*\\n", re.IGNORECASE)
+# FIXED regex: no double-escaping
+FRONTMATTER_RE = re.compile(r"^---\s*([\s\S]*?)\s*---\s*([\s\S]*)$", re.MULTILINE)
+# More forgiving split (no strict newlines needed)
+EXPL_SPLIT_RE  = re.compile(r"<!--\s*EXPLANATION\s*-->", re.IGNORECASE)
 
 def _parse_front_matter(text: str):
     m = FRONTMATTER_RE.match(text)
@@ -134,7 +135,7 @@ def _parse_front_matter(text: str):
             meta[k.strip()] = v.strip()
     return meta, body.strip()
 
-def _split_stem_explanation(body: str):
+def _split_stem_explanation(body: str) -> Tuple[str, str]:
     parts = EXPL_SPLIT_RE.split(body, maxsplit=1)
     if len(parts) == 2:
         return parts[0].strip(), parts[1].strip()
@@ -156,42 +157,52 @@ def _read_md_question(path: str) -> Dict[str, str]:
         "correct": meta.get("correct","").strip().upper(),
         "stem": stem,
         "explanation": explanation,
+        "_file": path,
     }
-    missing = [k for k in ["id","subject","correct"]] + [c for c in ["A","B","C","D","E"] if rec[c]==""]
-    if any([not rec["id"], not rec["subject"], not rec["correct"]]) or any(rec[c]=="" for c in ["A","B","C","D","E"]):
-        raise ValueError(f"{os.path.basename(path)} has missing required fields.")
+    # Check required fields quickly
+    if not rec["id"] or not rec["subject"] or not rec["correct"]:
+        raise ValueError("Missing 'id', 'subject', or 'correct'")
+    for c in ["A","B","C","D","E"]:
+        if rec[c] == "":
+            raise ValueError(f"Missing choice {c}")
     return rec
 
-def _read_all_markdown(folder: str) -> pd.DataFrame:
-    files = glob.glob(os.path.join(folder, "*.md"))
-    rows = []
+def _read_all_markdown(folder: str) -> Tuple[pd.DataFrame, List[str]]:
+    files = sorted(glob.glob(os.path.join(folder, "*.md")))
+    rows, errs = [], []
     for f in files:
         try:
             rows.append(_read_md_question(f))
         except Exception as e:
-            print(f"[WARN] Skip {os.path.basename(f)}: {e}")
+            errs.append(f"{os.path.basename(f)}: {e}")
     if not rows:
-        return pd.DataFrame(columns=REQUIRED_COLS)
+        return pd.DataFrame(columns=REQUIRED_COLS), errs
     df = pd.DataFrame(rows)
     for c in REQUIRED_COLS:
         if c not in df.columns:
             df[c] = ""
         df[c] = df[c].astype(str).str.strip()
     df["correct"] = df["correct"].str.upper()
-    return df.drop_duplicates(subset=["id"], keep="first").reset_index(drop=True)
+    df = df.drop_duplicates(subset=["id"], keep="first").reset_index(drop=True)
+    # Drop helper col
+    if "_file" in df.columns:
+        df = df.drop(columns=["_file"], errors="ignore")
+    return df, errs
 
-def discover_subjects_from_markdown(folder: str) -> Dict[str, Set[str]]:
-    files = glob.glob(os.path.join(folder, "*.md"))
+def discover_subjects_from_markdown(folder: str) -> Tuple[Dict[str, Set[str]], List[str]]:
+    files = sorted(glob.glob(os.path.join(folder, "*.md")))
     subj_to_files: Dict[str, Set[str]] = {}
+    errs = []
     for f in files:
         try:
             rec = _read_md_question(f)
-        except Exception:
+        except Exception as e:
+            errs.append(f"{os.path.basename(f)}: {e}")
             continue
         subj = rec.get("subject","").strip()
         if subj:
             subj_to_files.setdefault(subj, set()).add(f)
-    return subj_to_files
+    return subj_to_files, errs
 
 # ============================= (Optional) CSV support =============================
 def _read_csv_strict(path: str) -> pd.DataFrame:
@@ -218,20 +229,19 @@ def discover_subjects_from_csvs(folder: str) -> Dict[str, Set[str]]:
     return subj_to_files
 
 # ============================= Subject map (MD + CSV) =============================
-MD_SUBJECTS  = discover_subjects_from_markdown(MD_FOLDER)
-CSV_SUBJECTS = discover_subjects_from_csvs(DATA_FOLDER)
+MD_SUBJECTS, MD_ERRORS  = discover_subjects_from_markdown(MD_FOLDER)
+CSV_SUBJECTS            = discover_subjects_from_csvs(DATA_FOLDER)
 
 SUBJECT_TO_FILES: Dict[str, Set[str]] = {}
 for subj, paths in MD_SUBJECTS.items():
     SUBJECT_TO_FILES.setdefault(subj, set()).update(paths)
 for subj, paths in CSV_SUBJECTS.items():
     SUBJECT_TO_FILES.setdefault(subj, set()).update(paths)
-
 SUBJECT_OPTIONS = sorted(SUBJECT_TO_FILES.keys(), key=lambda s: s.lower())
 
 def _load_all_topics() -> pd.DataFrame:
     frames = []
-    df_md = _read_all_markdown(MD_FOLDER)
+    df_md, _errs = _read_all_markdown(MD_FOLDER)
     if not df_md.empty:
         frames.append(df_md)
     for f in set().union(*CSV_SUBJECTS.values()) if CSV_SUBJECTS else []:
@@ -250,7 +260,7 @@ def load_questions_for_subjects(selected_subjects: List[str], random_all: bool) 
     if not selected_subjects:
         return pd.DataFrame(columns=REQUIRED_COLS)
     frames = []
-    df_md = _read_all_markdown(MD_FOLDER)
+    df_md, _errs = _read_all_markdown(MD_FOLDER)
     if not df_md.empty:
         frames.append(df_md[df_md["subject"].isin(selected_subjects)])
     files_to_read = set()
@@ -278,9 +288,7 @@ def render_header(n:int, title_text:str):
     pos = st.session_state.current
     pct = int(((pos + 1) / max(n,1)) * 100)
     st.markdown("<div class='sticky-top'>", unsafe_allow_html=True)
-
-    # Tiny spacer avoids sub-pixel clipping at the very top
-    st.markdown("<div style='height:2px'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='height:2px'></div>", unsafe_allow_html=True)  # anti-clipping spacer
 
     left, right = st.columns([6,6])
     with left:
@@ -345,9 +353,23 @@ def render_results(pool: pd.DataFrame):
 with st.sidebar:
     st.header("Build Quiz")
 
+    # Debug panel so you can see exactly what's recognized
+    with st.expander("Debug (paths & files)"):
+        md_files = sorted(glob.glob(os.path.join(MD_FOLDER, "*.md")))
+        st.write("BASE_DIR:", BASE_DIR)
+        st.write("DATA_FOLDER:", DATA_FOLDER)
+        st.write("MD_FOLDER:", MD_FOLDER)
+        st.write("Found Markdown files:", len(md_files))
+        if md_files:
+            st.write("First few:", [os.path.basename(x) for x in md_files[:8]])
+        if MD_ERRORS:
+            st.warning("Markdown parse issues:")
+            for e in MD_ERRORS[:12]:
+                st.text(f"- {e}")
+
     SUBJECT_OPTIONS = sorted(SUBJECT_TO_FILES.keys(), key=lambda s: s.lower())
     if not SUBJECT_OPTIONS:
-        st.error(f"No subjects found. Add Markdown to `{MD_FOLDER}` (or CSVs to `{DATA_FOLDER}`) and reload.")
+        st.error(f"No subjects found. Put .md files in `{MD_FOLDER}` with proper YAML front-matter, then reload.")
         st.stop()
 
     random_all = st.toggle("Random from all topics", value=False)
