@@ -14,28 +14,15 @@ Which of the following best describes the typical histologic pattern of malignan
 
 <!-- EXPLANATION -->
 
-### Epidemiology
+Ovarian tumors in children and adolescents are uncommon, occurring in roughly five per 100,000 per year, and only about half of these are true neoplasms. The majority are benign, but approximately 10–20% harbor malignant histology. The pattern of disease in young patients is distinctly different from adults. In patients under 20 years of age, the large majority of ovarian tumors are of germ cell origin—accounting for nearly three-quarters of all neoplasms—whereas in adults, epithelial tumors predominate and are frequently advanced at diagnosis.
 
-- Ovarian malignancies in childhood are rare (≈ **5 per 100,000/year**), accounting for **~1% of pediatric cancers**.  
-- Among neoplastic lesions, **~10–20% are malignant**.  
-- In patients **<20 years**, **germ cell tumors** comprise **~70–80%** of neoplasms.  
-- **Epithelial tumors** (dominant in adults) are **uncommon before puberty** and are often advanced when they occur in adults.
+The incidence of ovarian tumors rises with age through adolescence, but the risk of malignancy does not follow this increase. Malignancy is exceedingly rare in infants, appears in about 20–25% of tumors in prepubertal girls (ages 1–8), and falls to approximately 10% in adolescents. Thus, although ovarian tumors become more common in older girls, the proportion that are malignant decreases after puberty.  
 
-**Age gradient (incidence vs. malignant proportion):**
-- **Infants <1 yr:** malignancy is exceptionally rare.  
-- **Prepubertal (1–8 yrs):** **~20–25%** malignant.  
-- **Adolescent (9–19 yrs):** **~10–15%** malignant.  
-Although overall incidence increases in adolescence, the **proportion** that are malignant **decreases** compared with the prepubertal group.
+Among malignant ovarian tumors in children, germ cell tumors—particularly yolk sac tumors and dysgerminomas—are the predominant types. These often secrete serum markers such as AFP or β-hCG, aiding diagnosis and follow-up. Epithelial ovarian carcinomas, which dominate the adult landscape, are exceedingly rare in the pediatric population.
 
-### Histologic distribution by age
+Certain inherited and developmental syndromes are associated with characteristic ovarian tumors. DICER1 syndrome predisposes to Sertoli–Leydig cell tumors. Peutz–Jeghers syndrome can lead to granulosa or sex cord–stromal tumors with annular tubules. McCune–Albright syndrome may present with recurrent estrogen-producing follicular cysts, while Maffucci and Ollier syndromes are associated with juvenile granulosa and Sertoli–Leydig tumors. Basal cell nevus syndrome can lead to ovarian fibromas, and Chédiak–Higashi syndrome may be linked to sclerosing stromal tumors.  
 
-| Age group | Common benign lesions | Common malignant lesions | Notes |
-|:--|:--|:--|:--|
-| <10 yrs | Functional cysts, teratomas | **Yolk sac tumor**, dysgerminoma | AFP often elevated |
-| 10–19 yrs | Dermoid cysts, cystadenomas | **Dysgerminoma**, immature teratoma | LDH or β-hCG may rise |
-| Adults | Cystadenomas | **Serous/mucinous carcinoma** | Predominantly epithelial; often advanced |
-
-### Visual comparison (marker style)
+The following illustration summarizes the major distinctions between pediatric and adult ovarian tumors.
 
 <svg width="760" height="260" xmlns="http://www.w3.org/2000/svg" aria-label="Distribution of pediatric vs adult ovarian tumor types">
   <defs>
@@ -60,22 +47,9 @@ Although overall incidence increases in adolescence, the **proportion** that are
 
   <line x1="320" y1="105" x2="450" y2="105" style="stroke:#333;stroke-width:2.5;marker-end:url(#arrow)"/>
   <text x="70" y="195" style="font-family:'Comic Sans MS';font-size:16px;fill:#333;">Malignant histology ≈ 10–20% overall</text>
-  <text x="70" y="215" style="font-family:'Comic Sans MS';font-size:16px;fill:#333;">Higher rate prepubertal (≈ 22%) than adolescent (≈ 10%)</text>
+  <text x="70" y="215" style="font-family:'Comic Sans MS';font-size:16px;fill:#333;">Higher rate prepubertal (~22%) than adolescent (~10%)</text>
 </svg>
 
-### Syndromic associations
+In summary, ovarian tumors in children and adolescents are rare and usually of germ cell origin. Recognition of this distinct distribution is essential to avoid overtreatment and to guide use of tumor markers, fertility-sparing surgery, and appropriate oncologic follow-up.
 
-- **DICER1** → Sertoli–Leydig cell tumor  
-- **Peutz–Jeghers** → granulosa or sex-cord stromal tumor with annular tubules  
-- **McCune–Albright** → recurrent estrogen-producing follicular cysts  
-- **Maffucci / Ollier** → juvenile granulosa or Sertoli–Leydig tumors  
-- **Basal cell nevus syndrome** → ovarian fibromas  
-- **Chédiak–Higashi** → sclerosing stromal tumor
-
-### Key points
-
-- In children and adolescents, **germ cell tumors** are the predominant malignant ovarian neoplasm.  
-- **AFP, LDH, and β-hCG** assist with diagnosis and follow-up of germ cell subtypes.  
-- **Ovarian preservation** is often feasible for benign or early-stage lesions when oncologically safe.
-
-**Correct answer: C.**
+**Correct answer: C — Germ cell tumors are the predominant malignant ovarian neoplasm in children and adolescents.**
