@@ -14,28 +14,28 @@ Which of the following best describes the typical histologic pattern of malignan
 
 <!-- EXPLANATION -->
 
-<div class="explain-scope">
+### Epidemiology
 
-### <span class="hdr-blue">🧠 Epidemiologic Context</span>
+- Ovarian malignancies in childhood are rare (≈ **5 per 100,000/year**), accounting for **~1% of pediatric cancers**.  
+- Among neoplastic lesions, **~10–20% are malignant**.  
+- In patients **<20 years**, **germ cell tumors** comprise **~70–80%** of neoplasms.  
+- **Epithelial tumors** (dominant in adults) are **uncommon before puberty** and are often advanced when they occur in adults.
 
-Ovarian malignancies in childhood are rare, accounting for **only 1% of pediatric cancers**, with an incidence of roughly **5 per 100,000 per year**. Among these, **germ cell tumors predominate**, comprising **70–80%** of neoplastic lesions.  
-Epithelial ovarian tumors, which dominate adult ovarian cancer statistics, are **exceedingly uncommon before puberty**.
+**Age gradient (incidence vs. malignant proportion):**
+- **Infants <1 yr:** malignancy is exceptionally rare.  
+- **Prepubertal (1–8 yrs):** **~20–25%** malignant.  
+- **Adolescent (9–19 yrs):** **~10–15%** malignant.  
+Although overall incidence increases in adolescence, the **proportion** that are malignant **decreases** compared with the prepubertal group.
 
-The malignant potential of ovarian tumors varies by age:  
-- **Infants &lt;1 yr:** malignancy is exceptionally rare  
-- **Prepubertal (1–8 yrs):** 20–25% of tumors are malignant  
-- **Adolescent (9–19 yrs):** 10–15% malignant  
-Despite rising incidence with age, the *proportion* that are malignant actually decreases.
-
----
-
-### <span class="hdr-green">🔬 Histologic Distribution</span>
+### Histologic distribution by age
 
 | Age group | Common benign lesions | Common malignant lesions | Notes |
 |:--|:--|:--|:--|
-| &lt;10 yrs | Functional cysts, teratomas | **Yolk sac tumor**, dysgerminoma | AFP often elevated |
-| 10–19 yrs | Dermoid cysts, cystadenomas | **Dysgerminoma**, immature teratoma | LDH and β-hCG may rise |
-| Adults | Cystadenomas | **Serous/mucinous carcinoma** | Epithelial, often advanced |
+| <10 yrs | Functional cysts, teratomas | **Yolk sac tumor**, dysgerminoma | AFP often elevated |
+| 10–19 yrs | Dermoid cysts, cystadenomas | **Dysgerminoma**, immature teratoma | LDH or β-hCG may rise |
+| Adults | Cystadenomas | **Serous/mucinous carcinoma** | Predominantly epithelial; often advanced |
+
+### Visual comparison (marker style)
 
 <svg width="760" height="260" xmlns="http://www.w3.org/2000/svg" aria-label="Distribution of pediatric vs adult ovarian tumor types">
   <defs>
@@ -63,27 +63,19 @@ Despite rising incidence with age, the *proportion* that are malignant actually 
   <text x="70" y="215" style="font-family:'Comic Sans MS';font-size:16px;fill:#333;">Higher rate prepubertal (≈ 22%) than adolescent (≈ 10%)</text>
 </svg>
 
----
-
-### <span class="hdr-violet">🧬 Syndromic Associations</span>
+### Syndromic associations
 
 - **DICER1** → Sertoli–Leydig cell tumor  
-- **Peutz–Jeghers** → Granulosa or sex-cord stromal tumor with annular tubules  
-- **McCune–Albright** → Recurrent estrogen-producing follicular cysts  
-- **Maffucci / Ollier** → Juvenile granulosa or Sertoli-Leydig tumors  
-- **Basal cell nevus syndrome** → Ovarian fibromas  
-- **Chédiak–Higashi** → Sclerosing stromal tumor
+- **Peutz–Jeghers** → granulosa or sex-cord stromal tumor with annular tubules  
+- **McCune–Albright** → recurrent estrogen-producing follicular cysts  
+- **Maffucci / Ollier** → juvenile granulosa or Sertoli–Leydig tumors  
+- **Basal cell nevus syndrome** → ovarian fibromas  
+- **Chédiak–Higashi** → sclerosing stromal tumor
 
----
+### Key points
 
-### <span class="hdr-rose">💡 Key Points for the Pediatric Surgeon</span>
+- In children and adolescents, **germ cell tumors** are the predominant malignant ovarian neoplasm.  
+- **AFP, LDH, and β-hCG** assist with diagnosis and follow-up of germ cell subtypes.  
+- **Ovarian preservation** is often feasible for benign or early-stage lesions when oncologically safe.
 
-- **Germ cell tumors are the hallmark of pediatric ovarian neoplasia.**  
-- **AFP, LDH, and β-hCG** help guide diagnosis and follow-up.  
-- **Ovarian preservation** is possible for many benign and early-stage lesions.  
-- Awareness of syndromic contexts prevents unnecessary oophorectomy.
-
----
-
-**✅ Correct Answer:** C — Germ cell tumors are the predominant malignant ovarian neoplasm in children and adolescents.
-</div>
+**Correct answer: C.**
