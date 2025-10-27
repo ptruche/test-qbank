@@ -14,38 +14,26 @@ st.markdown("""
 <style>
 :root { --card-bg:#ffffff; --card-border:#e6e8ec; --accent:#1d4ed8; --muted:#6b7280; }
 html, body { height:auto!important; overflow-y:auto!important; }
-.block-container { padding-top:1.1rem!important; padding-bottom:0.7rem!important; }
+.block-container { padding-top:1.1rem!important; padding-bottom:4.5rem!important; } /* extra bottom padding for tracker */
 
 /* Header / progress */
-.sticky-top {
-  position: sticky;
-  top: 0;
-  z-index: 1000;
-  background: #fff;
-  border-bottom: 1px solid #eef0f3;
-  padding: 0.85rem 0.6rem 0.6rem;
-  overflow: visible;
-  box-sizing: border-box;
-}
+.sticky-top { position: sticky; top: 0; z-index: 1000; background: #fff; border-bottom: 1px solid #eef0f3;
+              padding: 0.85rem 0.6rem 0.6rem; overflow: visible; box-sizing: border-box; }
 .top-title { font-weight:600; font-size:1.06rem; margin:0 0 .3rem 0; }
 .q-progress { height:6px; background:#eef0f3; border-radius:999px; overflow:hidden; margin:0 0 6px 0; }
 .q-progress>div { height:100%; background:var(--accent); width:0%; transition:width .25s ease; }
 
 /* Buttons in sticky header */
-.sticky-top .stButton>button {
-  padding: 0.48rem 0.9rem !important;
-  line-height: 1.2 !important;
-  min-height: 38px !important;
-  border-radius: 8px !important;
-  vertical-align: middle;
-}
+.sticky-top .stButton>button { padding: 0.48rem 0.9rem !important; line-height: 1.2 !important;
+  min-height: 38px !important; border-radius: 8px !important; vertical-align: middle; }
 
 /* Neutral question prompt */
 .q-prompt { border:1px solid var(--card-border); background:#fafbfc; border-radius:10px; padding:12px; margin-bottom:6px; }
 
 /* Neutral answers (no bubbles) */
 div[role="radiogroup"] { gap:0!important; }
-div[role="radiogroup"]>label { border:none!important; background:transparent!important; padding:8px 4px!important; margin:2px 0!important; border-radius:6px; }
+div[role="radiogroup"]>label { border:none!important; background:transparent!important; padding:8px 4px!important;
+  margin:2px 0!important; border-radius:6px; }
 div[role="radiogroup"]>label:hover { background:#f5f7fb!important; }
 
 /* Verdict (compact, neutral) */
@@ -53,11 +41,23 @@ div[role="radiogroup"]>label:hover { background:#f5f7fb!important; }
 .verdict-ok  { background:#10b9811a; color:#065f46; border-color:#34d399; }
 .verdict-err { background:#ef44441a; color:#7f1d1d; border-color:#fca5a5; }
 
-/* Plain container for explanation; no card/bubble */
+/* Plain explanation container */
 .explain-plain { padding-top:8px; background:transparent!important; border:none!important; box-shadow:none!important; }
 
-/* Review header tweaks */
-.review-title { font-weight:700; font-size:1.3rem; margin:0.25rem 0 0.5rem 0; }
+/* ===== Tracker styles ===== */
+.tracker-wrap { position: fixed; left: 0; right: 0; bottom: 0; z-index: 999; background: #ffffffcc; backdrop-filter: blur(6px);
+  border-top: 1px solid #e5e7eb; padding: .5rem .8rem; }
+.tracker-inner { max-width: 1400px; margin: 0 auto; }
+.tracker-title { font-weight: 600; font-size: .98rem; margin-bottom: .35rem; }
+.tracker-chips { display: grid; grid-template-columns: repeat( auto-fit, minmax(240px, 1fr) ); gap: 6px; }
+.chip { border:1px solid #e5e7eb; border-radius: 999px; padding: 6px 10px; display:flex; align-items:center; gap:8px; background:#fff; }
+.chip.done { background: #10b98114; border-color:#10b98166; }
+.chip input { transform: scale(1.05); }
+
+/* Hide streamlit's bottom padding overlap on small screens */
+@media (max-width: 900px){
+  .block-container { padding-bottom: 6rem!important; }
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -65,12 +65,11 @@ div[role="radiogroup"]>label:hover { background:#f5f7fb!important; }
 BASE_DIR     = os.path.dirname(os.path.abspath(__file__))
 DATA_FOLDER  = os.getenv("QBANK_DATA_DIR", os.path.join(BASE_DIR, "data"))
 MD_FOLDER    = os.getenv("QBANK_MD_DIR", os.path.join(DATA_FOLDER, "questions"))
-REVIEW_FOLDER= os.getenv("QBANK_REVIEW_DIR", os.path.join(DATA_FOLDER, "reviews"))
+PROGRESS_PATH= os.path.join(DATA_FOLDER, "tracker_progress.json")
 
 # Ensure folders exist
 os.makedirs(DATA_FOLDER, exist_ok=True)
 os.makedirs(MD_FOLDER, exist_ok=True)
-os.makedirs(REVIEW_FOLDER, exist_ok=True)
 
 REQUIRED_COLS = ["id","subject","stem","A","B","C","D","E","correct","explanation"]
 
@@ -80,30 +79,21 @@ SVG_BLOCK_RE = re.compile(r"(<svg[\s\S]*?</svg>)", re.IGNORECASE)
 EXPLAIN_SCOPE_CSS = """
 <style>
 .explain-scope { font-family: 'Segoe UI', Arial, sans-serif; font-size: 1.02rem; line-height: 1.55; color:#222; }
-.explain-scope h3     { margin:.4rem 0 .25rem 0; font-weight:700; }
-.explain-scope .hdr-blue  { color:#1d4ed8; }
-.explain-scope .hdr-green { color:#059669; }
-.explain-scope .hdr-violet{ color:#7c3aed; }
-.explain-scope .hdr-rose  { color:#e11d48; }
-.explain-scope table    { border-collapse:collapse; width:100%; margin:.4rem 0; border:2px solid #444; }
-.explain-scope th, td   { border:1px solid #d1d5db; padding:.45rem .5rem; text-align:center; }
+.explain-scope h3 { margin:.4rem 0 .25rem 0; font-weight:700; }
+.explain-scope table { border-collapse:collapse; width:100%; margin:.4rem 0; border:2px solid #444; }
+.explain-scope th, td { border:1px solid #d1d5db; padding:.45rem .5rem; text-align:center; }
 .explain-scope thead th { background:#1d4ed8; color:white; border-color:#1d4ed8; }
 .explain-scope tr:nth-child(even) { background:#f9fafb; }
-.explain-scope .t-blue  { color:#0b5394; }
-.explain-scope .t-red   { color:#b32400; }
-.explain-scope ul { margin:.2rem 0 .2rem 1.1rem; }
 </style>
 """
 
-def _render_markdown_with_svg(md_text: str, scoped: bool = False):
-    """Render arbitrary Markdown + inline SVG safely. Optionally include scoped CSS."""
-    if not md_text or not str(md_text).strip():
+def render_explanation_block(explain_text: str):
+    """Render explanation safely, with scoped CSS and proper SVG handling."""
+    if not explain_text or not str(explain_text).strip():
         return
-    if scoped:
-        st.markdown("<div class='explain-scope'>", unsafe_allow_html=True)
-        st.markdown(EXPLAIN_SCOPE_CSS, unsafe_allow_html=True)
-
-    parts = SVG_BLOCK_RE.split(md_text)
+    st.markdown("<div class='explain-scope'>", unsafe_allow_html=True)
+    st.markdown(EXPLAIN_SCOPE_CSS, unsafe_allow_html=True)
+    parts = SVG_BLOCK_RE.split(explain_text)
     for chunk in parts:
         if not chunk or not chunk.strip():
             continue
@@ -113,14 +103,9 @@ def _render_markdown_with_svg(md_text: str, scoped: bool = False):
             components.html(chunk, height=height + 20, scrolling=False)
         else:
             st.markdown(chunk, unsafe_allow_html=False)
+    st.markdown("</div>", unsafe_allow_html=True)
 
-    if scoped:
-        st.markdown("</div>", unsafe_allow_html=True)
-
-def render_explanation_block(explain_text: str):
-    _render_markdown_with_svg(explain_text, scoped=True)
-
-# ============================= Markdown loaders (QBank) =============================
+# ============================= Markdown loaders =============================
 FRONTMATTER_RE = re.compile(r"^---\s*([\s\S]*?)\s*---\s*([\s\S]*)$", re.MULTILINE)
 EXPL_SPLIT_RE  = re.compile(r"<!--\s*EXPLANATION\s*-->", re.IGNORECASE)
 
@@ -273,51 +258,73 @@ def load_questions_for_subjects(selected_subjects: List[str], random_all: bool) 
     out = pd.concat(frames, ignore_index=True)
     return out.drop_duplicates(subset=["id"], keep="first").reset_index(drop=True)
 
-# ============================= Review system (NEW) =============================
-def _first_heading(md: str) -> str:
-    for line in md.splitlines():
-        if line.strip().startswith("#"):
-            return line.lstrip("#").strip()
-    return ""
+# ============================= Tracker Topics (your list) =============================
+TOPIC_TRACKER = [
+    "Bronchoscopy","Chest Wall Deformities: Pectus Excavatum/Carinatum/Marfan’s/and/Poland’s Syndromes","Chylothorax",
+    "Congenital Diaphragmatic Hernia","Cystic Diseases of the Lung","Cystic Fibrosis","Cystic Pulmonary Airway Malformation",
+    "Empyema","Esophageal Atresia/and/Tracheoesophageal Fistula","Esophageal Perforation","Esophageal Replacement",
+    "Esophageal Stenosis/Webs/Diverticuli","Esophageal Stricture: Caustic Ingestion/and/Other Causes","Esophagoscopy",
+    "Eventration of the Diaphragm","Gastroesophageal Reflux/Barrett’s Esophagus","Laryngomalacia","Lobar Emphysema",
+    "Mediastinal Cysts/Masses","Patent Ductus Arteriosus","Pneumothorax","Prenatal Anomalies/and/Therapy","Pulmonary Abscess",
+    "Pulmonary Hypoplasia/Hypertension","Pulmonary Sequestration","Subacute Bacterial Endocarditis Prophylaxis",
+    "Tracheobronchial Foreign Bodies","Tracheomalacia","Vascular Ring/and/Pulmonary Artery Sling","Abdominal Pain",
+    "Alimentary Tract Duplications","Appendicitis","Ascites: Chylous","Biliary Atresia","Choledochal Cysts",
+    "Cloacal Exstrophy/Bladder Exstrophy","Duodenal Atresia/Stenosis/Webs/Annular Pancreas","Gallbladder Disease/Gallstones",
+    "Gastric Volvulus","Gastrointestinal Bleeding","Gastroschisis","Hepatic Infections: Hepatitis/Abscess/Cysts",
+    "Hirschsprung Disease","Hypertrophic Pyloric Stenosis","Inflammatory Bowel Disease","Inguinal Hernia","Intestinal Atresia",
+    "Intussusception","Malrotation","Meconium Ileus/Peritonitis/Plug","Mesenteric/and/Omental Cysts","Necrotizing Enterocolitis",
+    "Neonatal Gastric Perforation","Neonatal Obstruction","Omphalocele","Omphalomesenteric Duct Remnants/Urachus/and/Meckel’s",
+    "Peptic Ulcer Disease","Polyps","Portal Hypertension","Umbilical Hernia/and/Other Umbilical Disorders",
+    "Adrenal Cortical Tumors/Pheochromocytoma","Anal Pathology: Fissures/Abscesses/Fistulae/Pilonidal/Prolapse","Anorectal Malformation",
+    "Arterial Diseases/and/Vasculitis","Branchial Cleft/Arch Anomalies","Breast Disorders",
+    "Circumcision/and/Abnormalities of the Urethra/Penis/Scrotum","Disorders of Sexual Development","Endocrine Diseases",
+    "Lymphadenopathy/Atypical Mycobacteria","Neurological: Shunt Complications/Dermal Sinuses","Ovarian Torsion/Cysts/and/Tumors",
+    "Renal Diseases: Nephrotic Syndrome/DI/Renal Vein Thrombosis/Chronic Failure/Prune Belly Syndrome",
+    "Thyroglossal Duct Cyst/Sinus","Thyroid Nodules","Torsions: Appendix Testes/Testicular","Torticollis",
+    "Undescended Testicle (Cryptorchidism)","Vaginal Atresia/Hydrometrocolpos","Vascular Anomalies","Abdominal Trauma",
+    "Acute Renal Failure","ARDS","Burns: Resuscitation/Airway/Electrical/Nutrition/Wound/Sepsis",
+    "Cardiovascular Trauma: Tamponade/Contusion/Arch Disruption/Peripheral Vascular Injuries","Coagulation","Extracorporeal Life Support",
+    "Fluids/and/Electrolytes","Hematologic Diseases: Spherocytosis/Sickle Cell/ITP/HSP",
+    "Lung Physiology/Pathophysiology/Ventilators/Pneumonia","Musculoskeletal Trauma: Pelvis/Long Bone",
+    "Neonatal Physiology/and/Pathophysiology: Transition from Fetal Circulation/Cardiovascular Monitoring/Shock","Neurosurgical Trauma",
+    "Nonaccidental Injuries: Diagnosis/Evaluation/Legal Issues","Nutrition","Obesity","Pediatric Anesthesia/and/Pain Management",
+    "Short Bowel Syndrome/Intestinal Failure","Soft Tissue Trauma: Tetanus/Bites/Wound Infection/Crush Injuries","Thoracic Trauma",
+    "Transplantation","Trauma: Initial Assessment/and/Resuscitation","Abdominal Mass/in/the/Newborn","Adrenal Cancer",
+    "Benign Liver Tumors: Hepatic Mesenchymal Hamartoma/Adenoma/FNH","Bone Tumors: Osteogenic Sarcoma/Ewing Sarcoma",
+    "Chemo/Radiation Therapy/Immunotherapy Concepts/Genetics","Dermoid/Epidermoid Cysts/Soft Tissue Nodules",
+    "Gastrointestinal Tumors","Lung/and/Chest Wall Tumors","Lymphoma/Leukemia",
+    "Malignant Liver Tumors: Hepatoblastoma/Hepatocellular Carcinoma","Mesoblastic Nephroma","Neuroblastoma","Nevi/Melanoma",
+    "Ovarian/and/Adnexal Problems","Rhabdomyosarcoma","Splenic Diseases","Teratoma","Testicular Tumors",
+    "Wilms Tumor/Renal Cell Carcinoma/and/Hemihypertrophy"
+]
 
-def _parse_optional_front_matter(md: str) -> Tuple[Dict[str,str], str]:
-    m = FRONTMATTER_RE.match(md)
-    if not m:
-        return {}, md
-    fm, body = m.group(1), m.group(2)
-    meta = {}
-    for line in fm.splitlines():
-        if ":" in line:
-            k,v = line.split(":",1)
-            meta[k.strip()] = v.strip()
-    return meta, body.strip()
+def _slug(s: str) -> str:
+    s2 = re.sub(r"[^A-Za-z0-9]+", "-", s).strip("-").lower()
+    return s2[:80]
 
-def discover_review_topics(review_folder: str) -> Dict[str, str]:
-    """Returns {display_title: file_path} for .md files in review folder."""
-    topics: Dict[str, str] = {}
-    for path in sorted(glob.glob(os.path.join(review_folder, "*.md"))):
+def _load_progress() -> Dict[str, bool]:
+    if os.path.exists(PROGRESS_PATH):
         try:
-            with open(path, "r", encoding="utf-8") as f:
-                raw = f.read()
-            meta, body = _parse_optional_front_matter(raw)
-            title = meta.get("title") or meta.get("subject") or _first_heading(body)
-            if not title:
-                # fallback to filename
-                title = os.path.splitext(os.path.basename(path))[0].replace("_", " ").strip()
-            topics[title] = path
+            with open(PROGRESS_PATH, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            # Ensure all topics exist (new ones default to False)
+            for t in TOPIC_TRACKER:
+                data.setdefault(t, False)
+            return data
         except Exception:
-            continue
-    return topics
+            pass
+    return {t: False for t in TOPIC_TRACKER}
 
-def read_review_markdown(path: str) -> Tuple[str, str]:
-    """Returns (title, body) from a review .md. Title comes from front-matter 'title'/'subject' or first H1."""
-    with open(path, "r", encoding="utf-8") as f:
-        raw = f.read()
-    meta, body = _parse_optional_front_matter(raw)
-    title = meta.get("title") or meta.get("subject") or _first_heading(body)
-    if not title:
-        title = os.path.splitext(os.path.basename(path))[0].replace("_", " ").strip()
-    return title, body
+def _save_progress(d: Dict[str, bool]):
+    try:
+        with open(PROGRESS_PATH, "w", encoding="utf-8") as f:
+            json.dump(d, f, ensure_ascii=False, indent=2)
+    except Exception:
+        pass
+
+# Single source of truth in session
+if "tracker_progress" not in st.session_state:
+    st.session_state.tracker_progress = _load_progress()
 
 # ============================= Quiz state & UI =============================
 def init_session_state(n:int):
@@ -331,7 +338,6 @@ def render_header(n:int, title_text:str):
     pct = int(((pos + 1) / max(n,1)) * 100)
     st.markdown("<div class='sticky-top'>", unsafe_allow_html=True)
     st.markdown("<div style='height:2px'></div>", unsafe_allow_html=True)  # anti-clipping spacer
-
     left, right = st.columns([6,6])
     with left:
         st.markdown(f"<div class='top-title'>{title_text}</div>", unsafe_allow_html=True)
@@ -352,12 +358,10 @@ def render_question(pool: pd.DataFrame):
 
     letters = ["A","B","C","D","E"]
     selected = st.radio(
-        label="",
-        options=letters,
+        label="", options=letters,
         format_func=lambda L: row[L],
         index=(letters.index(st.session_state.answers[i]) if st.session_state.answers[i] in letters else None),
-        label_visibility="collapsed",
-        key=f"radio_{i}"
+        label_visibility="collapsed", key=f"radio_{i}"
     )
     st.session_state.answers[i] = selected
 
@@ -368,11 +372,8 @@ def render_question(pool: pd.DataFrame):
     with cols[1]:
         if st.session_state.revealed[i]:
             correct = str(row["correct"]).strip().upper()
-            verdict_html = (
-                "<span class='verdict verdict-ok'>Correct</span>"
-                if selected == correct else
-                "<span class='verdict verdict-err'>Incorrect</span>"
-            )
+            verdict_html = ("<span class='verdict verdict-ok'>Correct</span>" if selected == correct
+                            else "<span class='verdict verdict-err'>Incorrect</span>")
             st.markdown(verdict_html, unsafe_allow_html=True)
 
     if st.session_state.revealed[i] and str(row["explanation"]).strip():
@@ -393,18 +394,17 @@ def render_results(pool: pd.DataFrame):
 
 # ============================= Sidebar =============================
 with st.sidebar:
-    # ---------- Quiz builder ----------
     st.header("Build Quiz")
 
     SUBJECT_OPTIONS = sorted(SUBJECT_TO_FILES.keys(), key=lambda s: s.lower())
     if not SUBJECT_OPTIONS:
         st.error(f"No subjects found. Put .md files in `{MD_FOLDER}` with proper YAML front-matter, then reload.")
-        # do not st.stop(); allow review mode even if no questions yet
+        st.stop()
 
-    random_all = st.toggle("Random from all topics", value=False, disabled=(len(SUBJECT_OPTIONS)==0))
-    pick_subjects = st.multiselect("Subject", SUBJECT_OPTIONS, disabled=random_all or (len(SUBJECT_OPTIONS)==0))
+    random_all = st.toggle("Random from all topics", value=False)
+    pick_subjects = st.multiselect("Subject", SUBJECT_OPTIONS, disabled=random_all)
 
-    df = load_questions_for_subjects(pick_subjects, random_all=random_all) if SUBJECT_OPTIONS else pd.DataFrame(columns=REQUIRED_COLS)
+    df = load_questions_for_subjects(pick_subjects, random_all=random_all)
     total = len(df)
     min_q = 1 if total >= 1 else 0
     max_q = total if total >= 1 else 1
@@ -413,10 +413,9 @@ with st.sidebar:
 
     n_questions = st.number_input("Number of Questions",
                                   min_value=min_q, max_value=max_q,
-                                  step=step_q, value=default_q,
-                                  disabled=(total == 0))
+                                  step=step_q, value=default_q)
 
-    if st.button("Start ▶", disabled=(total == 0)):
+    if st.button("Start ▶"):
         if df.empty:
             st.warning("No questions available for the current selection.")
         else:
@@ -427,58 +426,83 @@ with st.sidebar:
             init_session_state(len(pool))
             st.session_state.random_all = random_all
             st.session_state.selected_subjects = pick_subjects
-            # If we were in review mode, exit it
-            st.session_state.mode = "quiz"
-            st.session_state.review_path = None
 
-    st.divider()
-
-    # ---------- Review topic (NEW) ----------
-    st.header("Review topic")
-    reviews_map = discover_review_topics(REVIEW_FOLDER)  # {display_title: path}
-    if not reviews_map:
-        st.info(f"Put review .md files in `{REVIEW_FOLDER}` to enable topic review.")
-        selected_review_title = None
-    else:
-        selected_review_title = st.selectbox("Choose a topic to review", options=sorted(reviews_map.keys(), key=str.lower))
-
-    c1, c2 = st.columns(2)
-    with c1:
-        open_ok = st.button("Open Review 📖", disabled=(selected_review_title is None))
-    with c2:
-        clear_ok = st.button("Close Review")
-
-    if open_ok and selected_review_title:
-        st.session_state.review_path = reviews_map[selected_review_title]
-        st.session_state.mode = "review"
-    if clear_ok:
-        st.session_state.review_path = None
-        # If there is a quiz loaded, return to it; otherwise just clear mode
-        st.session_state.mode = "quiz" if st.session_state.get("pool") is not None else None
-
-# ============================= Main =============================
-mode = st.session_state.get("mode")
-review_path = st.session_state.get("review_path")
+# ============================= Main (quiz area) =============================
 pool = st.session_state.get("pool")
-
-# ---- Review mode view (NEW) ----
-if mode == "review" and review_path:
-    try:
-        title, body = read_review_markdown(review_path)
-        st.markdown(f"<div class='review-title'>{title}</div>", unsafe_allow_html=True)
-        _render_markdown_with_svg(body, scoped=False)
-    except Exception as e:
-        st.error(f"Could not open review: {e}")
-    st.stop()
-
-# ---- Quiz flow (existing) ----
 if pool is None:
-    st.write("Use the sidebar to start a quiz or open a review lecture.")
-    st.stop()
-
-title_text = "Random Mix" if st.session_state.get("random_all") else ", ".join(st.session_state.get("selected_subjects", [])) or "PSITE"
-render_header(len(pool), title_text)
-if st.session_state.finished:
-    render_results(pool)
+    st.write("Use the sidebar to start a quiz.")
+    # Continue rendering tracker even without a quiz
 else:
-    render_question(pool)
+    title_text = "Random Mix" if st.session_state.get("random_all") else ", ".join(st.session_state.get("selected_subjects", [])) or "PSITE"
+    render_header(len(pool), title_text)
+    if st.session_state.finished:
+        render_results(pool)
+    else:
+        render_question(pool)
+
+# ============================= Tracker (bottom ladder) =============================
+def render_topic_tracker():
+    prog: Dict[str, bool] = st.session_state.tracker_progress
+
+    # Controls (shown above the chips/table)
+    with st.container():
+        cc1, cc2, cc3, cc4 = st.columns([2,1,1,1])
+        with cc1:
+            query = st.text_input("Search topics", "", placeholder="filter…")
+        with cc2:
+            only_incomplete = st.toggle("Show only incomplete", value=False)
+        with cc3:
+            view_mode = st.selectbox("View", ["Chips", "Table"], index=0)
+        with cc4:
+            if st.button("Save progress"):
+                _save_progress(prog)
+                st.success("Progress saved.", icon="✅")
+
+    # Apply filter
+    filtered = [t for t in TOPIC_TRACKER if (query.lower() in t.lower())]
+    if only_incomplete:
+        filtered = [t for t in filtered if not prog.get(t, False)]
+
+    # Bulk actions
+    b1, b2 = st.columns(2)
+    with b1:
+        if st.button("Mark ALL done"):
+            for t in filtered:
+                prog[t] = True
+    with b2:
+        if st.button("Mark ALL undone"):
+            for t in filtered:
+                prog[t] = False
+
+    # Chips mode (compact grid of checkboxes)
+    if view_mode == "Chips":
+        # Render chips in a grid
+        # We'll make small columns to keep layout responsive
+        cols = st.columns(4)
+        for idx, topic in enumerate(filtered):
+            with cols[idx % 4]:
+                key = f"chk_{_slug(topic)}"
+                checked = st.checkbox(topic, value=prog.get(topic, False), key=key)
+                prog[topic] = checked
+
+    # Table mode (editable table)
+    else:
+        df = pd.DataFrame({
+            "Topic": filtered,
+            "Completed": [bool(prog.get(t, False)) for t in filtered]
+        })
+        edited = st.data_editor(
+            df, use_container_width=True, hide_index=True,
+            column_config={"Completed": st.column_config.CheckboxColumn("Completed")}
+        )
+        # sync back
+        for _, row in edited.iterrows():
+            prog[row["Topic"]] = bool(row["Completed"])
+
+    # Auto-save silently after interactions
+    _save_progress(prog)
+
+# Render fixed footer container with widgets above (widgets can't live inside raw HTML)
+st.markdown("<div class='tracker-wrap'><div class='tracker-inner'><div class='tracker-title'>Topic Tracker</div></div></div>", unsafe_allow_html=True)
+with st.container():
+    render_topic_tracker()
