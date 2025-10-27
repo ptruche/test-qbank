@@ -38,11 +38,13 @@ div[role="radiogroup"]>label:hover { background:#f5f7fb!important; }
 
 .explain-plain { padding-top:8px; background:transparent!important; border:none!important; box-shadow:none!important; }
 
-/* Topic chips */
+/* Topic chips (3 columns, professional) */
 .chips-grid { display:grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap:8px; }
-.chip { border:1px solid #e5e7eb; border-radius: 12px; padding: 8px 10px; display:flex; gap:10px; align-items:center; background:#fff; }
+.chip { border:1px solid #e5e7eb; border-radius: 10px; padding: 8px 10px; display:flex; gap:10px; align-items:center; background:#fff; }
 .chip.done { background: #10b98114; border-color:#10b98166; }
-.chip label { flex:1; }
+
+/* Spacer to avoid clipping under sticky header when topics shown first */
+.top-spacer { height: 10px; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -237,7 +239,6 @@ def load_questions_for_subjects(selected_subjects: List[str], random_all: bool) 
     return out.drop_duplicates(subset=["id"], keep="first").reset_index(drop=True)
 
 # ============================= Topic Tracker (ordered) =============================
-# Order: Foundations → Neonatal → Congenital GI/Abd wall → Thoracic/Airway → Esophagus/Lung → Hepatobiliary → Colorectal → Uro/Endo/Thyroid → Vascular/Skin/Lymph → Oncology → Trauma/Critical Care → Transplant
 TOPIC_TRACKER = [
     # Foundations / Physiology
     "Fluids/and/Electrolytes","Nutrition","Pediatric Anesthesia/and/Pain Management",
@@ -314,8 +315,9 @@ def _save_progress(d: Dict[str, bool]):
 if "tracker_progress" not in st.session_state:
     st.session_state.tracker_progress = _load_progress()
 
-if "mode" not in st.session_state:
-    st.session_state.mode = "quiz"  # or "topics"
+# Show topics (no separate mode; quiz can run simultaneously)
+if "show_topics" not in st.session_state:
+    st.session_state.show_topics = False
 
 # ============================= Quiz state & UI =============================
 def init_session_state(n:int):
@@ -389,6 +391,8 @@ with st.sidebar:
         st.error(f"No subjects found. Put .md files in `{MD_FOLDER}` with proper YAML front-matter, then reload.")
         st.stop()
 
+    st.session_state.show_topics = st.toggle("Show all topics", value=st.session_state.show_topics)
+
     random_all = st.toggle("Random from all topics", value=False)
     pick_subjects = st.multiselect("Subject", SUBJECT_OPTIONS, disabled=random_all)
 
@@ -415,77 +419,67 @@ with st.sidebar:
             st.session_state.random_all = random_all
             st.session_state.selected_subjects = pick_subjects
 
-    st.markdown("---")
-    if st.button("👀 See all topics"):
-        st.session_state.mode = "topics"
+# ============================= Topics (chips-only, 3 columns) =============================
+def _save_progress(d: Dict[str, bool]):
+    try:
+        with open(PROGRESS_PATH, "w", encoding="utf-8") as f:
+            json.dump(d, f, ensure_ascii=False, indent=2)
+    except Exception:
+        pass
 
-# ============================= Topics Page =============================
-def render_topics_page():
+def render_topics_chips():
     prog: Dict[str, bool] = st.session_state.tracker_progress
-    st.subheader("All Topics")
-    # Quick stats
+    st.markdown("<div class='top-spacer'></div>", unsafe_allow_html=True)  # avoids H2 clipping
+    st.header("All Topics")
     completed = sum(bool(prog.get(t, False)) for t in TOPIC_TRACKER)
     st.caption(f"Completed: {completed}/{len(TOPIC_TRACKER)} ({int(100*completed/len(TOPIC_TRACKER))}%)")
 
-    # Search + filter
-    cols = st.columns([2,1,1,1])
-    with cols[0]:
+    top_cols = st.columns([2, 1, 1])
+    with top_cols[0]:
         query = st.text_input("Search", "", placeholder="filter…")
-    with cols[1]:
+    with top_cols[1]:
         only_incomplete = st.toggle("Only incomplete", value=False)
-    with cols[2]:
-        if st.button("Mark ALL visible done"):
-            pass  # handled after filtering
-    with cols[3]:
-        if st.button("Mark ALL visible undone"):
-            pass  # handled after filtering
+    with top_cols[2]:
+        pass
 
     filtered = [t for t in TOPIC_TRACKER if (query.lower() in t.lower())]
     if only_incomplete:
         filtered = [t for t in filtered if not prog.get(t, False)]
 
-    # Apply bulk buttons after we know `filtered`
-    if cols[2].button("✔️ Confirm done for visible"):
-        for t in filtered:
-            prog[t] = True
-    if cols[3].button("↩️ Confirm undone for visible"):
-        for t in filtered:
-            prog[t] = False
-
-    # Chips (3 columns)
-    st.write("")  # tiny spacer
-    # render as three columns evenly
-    chip_cols = st.columns(3)
-    for idx, topic in enumerate(filtered):
-        with chip_cols[idx % 3]:
+    st.markdown("<div class='chips-grid'>", unsafe_allow_html=True)
+    # render 3 columns evenly using st.columns(3) so keyboard focus behaves nicely
+    cols = st.columns(3)
+    for i, topic in enumerate(filtered):
+        with cols[i % 3]:
             key = f"chk_{_slug(topic)}"
             checked = st.checkbox(topic, value=prog.get(topic, False), key=key)
             prog[topic] = checked
-            # Optional subtle visual cue per-chip
-            st.markdown(f"<div class='chip{' done' if checked else ''}'></div>", unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
 
-    # Save controls
-    save_col1, save_col2 = st.columns([1,4])
-    with save_col1:
+    save_cols = st.columns([1,1,6])
+    with save_cols[0]:
         if st.button("Save progress"):
             _save_progress(prog)
             st.success("Progress saved.", icon="✅")
-    with save_col2:
-        if st.button("Back to quiz"):
+    with save_cols[1]:
+        if st.button("Mark all visible done"):
+            for t in filtered:
+                prog[t] = True
             _save_progress(prog)
-            st.session_state.mode = "quiz"
 
 # ============================= Main =============================
-if st.session_state.mode == "topics":
-    render_topics_page()
+# If topics are visible, render them first; quiz can still run below.
+if st.session_state.show_topics:
+    render_topics_chips()
+    st.markdown("---")
+
+pool = st.session_state.get("pool")
+if pool is None:
+    st.write("Use the sidebar to start a quiz.")
 else:
-    pool = st.session_state.get("pool")
-    if pool is None:
-        st.write("Use the sidebar to start a quiz.")
+    title_text = "Random Mix" if st.session_state.get("random_all") else ", ".join(st.session_state.get("selected_subjects", [])) or "PSITE"
+    render_header(len(pool), title_text)
+    if st.session_state.finished:
+        render_results(pool)
     else:
-        title_text = "Random Mix" if st.session_state.get("random_all") else ", ".join(st.session_state.get("selected_subjects", [])) or "PSITE"
-        render_header(len(pool), title_text)
-        if st.session_state.finished:
-            render_results(pool)
-        else:
-            render_question(pool)
+        render_question(pool)
