@@ -9,86 +9,66 @@ import streamlit.components.v1 as components
 
 st.set_page_config(page_title="PSITE", page_icon=None, layout="wide")
 
-# ============================= Base UI CSS (neutral everywhere) =============================
+# ============================= Base UI CSS =============================
 st.markdown("""
 <style>
 :root { --card-bg:#ffffff; --card-border:#e6e8ec; --accent:#1d4ed8; --muted:#6b7280; }
 html, body { height:auto!important; overflow-y:auto!important; }
-.block-container { padding-top:1.1rem!important; padding-bottom:4.5rem!important; } /* extra bottom padding for tracker */
+.block-container { padding-top:1.1rem!important; padding-bottom:0.8rem!important; }
 
-/* Header / progress */
 .sticky-top { position: sticky; top: 0; z-index: 1000; background: #fff; border-bottom: 1px solid #eef0f3;
-              padding: 0.85rem 0.6rem 0.6rem; overflow: visible; box-sizing: border-box; }
+  padding: 0.85rem 0.6rem 0.6rem; overflow: visible; box-sizing: border-box; }
 .top-title { font-weight:600; font-size:1.06rem; margin:0 0 .3rem 0; }
 .q-progress { height:6px; background:#eef0f3; border-radius:999px; overflow:hidden; margin:0 0 6px 0; }
 .q-progress>div { height:100%; background:var(--accent); width:0%; transition:width .25s ease; }
 
-/* Buttons in sticky header */
 .sticky-top .stButton>button { padding: 0.48rem 0.9rem !important; line-height: 1.2 !important;
-  min-height: 38px !important; border-radius: 8px !important; vertical-align: middle; }
+  min-height: 38px !important; border-radius: 8px !important; }
 
-/* Neutral question prompt */
 .q-prompt { border:1px solid var(--card-border); background:#fafbfc; border-radius:10px; padding:12px; margin-bottom:6px; }
 
-/* Neutral answers (no bubbles) */
 div[role="radiogroup"] { gap:0!important; }
 div[role="radiogroup"]>label { border:none!important; background:transparent!important; padding:8px 4px!important;
   margin:2px 0!important; border-radius:6px; }
 div[role="radiogroup"]>label:hover { background:#f5f7fb!important; }
 
-/* Verdict (compact, neutral) */
 .verdict { font-weight:600; padding:.22rem .6rem; border-radius:999px; border:1px solid transparent; display:inline-flex; align-items:center; }
 .verdict-ok  { background:#10b9811a; color:#065f46; border-color:#34d399; }
 .verdict-err { background:#ef44441a; color:#7f1d1d; border-color:#fca5a5; }
 
-/* Plain explanation container */
 .explain-plain { padding-top:8px; background:transparent!important; border:none!important; box-shadow:none!important; }
 
-/* ===== Tracker styles ===== */
-.tracker-wrap { position: fixed; left: 0; right: 0; bottom: 0; z-index: 999; background: #ffffffcc; backdrop-filter: blur(6px);
-  border-top: 1px solid #e5e7eb; padding: .5rem .8rem; }
-.tracker-inner { max-width: 1400px; margin: 0 auto; }
-.tracker-title { font-weight: 600; font-size: .98rem; margin-bottom: .35rem; }
-.tracker-chips { display: grid; grid-template-columns: repeat( auto-fit, minmax(240px, 1fr) ); gap: 6px; }
-.chip { border:1px solid #e5e7eb; border-radius: 999px; padding: 6px 10px; display:flex; align-items:center; gap:8px; background:#fff; }
+/* Topic chips */
+.chips-grid { display:grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap:8px; }
+.chip { border:1px solid #e5e7eb; border-radius: 12px; padding: 8px 10px; display:flex; gap:10px; align-items:center; background:#fff; }
 .chip.done { background: #10b98114; border-color:#10b98166; }
-.chip input { transform: scale(1.05); }
-
-/* Hide streamlit's bottom padding overlap on small screens */
-@media (max-width: 900px){
-  .block-container { padding-bottom: 6rem!important; }
-}
+.chip label { flex:1; }
 </style>
 """, unsafe_allow_html=True)
 
-# ============================= Resolve data paths robustly =============================
+# ============================= Paths =============================
 BASE_DIR     = os.path.dirname(os.path.abspath(__file__))
 DATA_FOLDER  = os.getenv("QBANK_DATA_DIR", os.path.join(BASE_DIR, "data"))
 MD_FOLDER    = os.getenv("QBANK_MD_DIR", os.path.join(DATA_FOLDER, "questions"))
 PROGRESS_PATH= os.path.join(DATA_FOLDER, "tracker_progress.json")
 
-# Ensure folders exist
 os.makedirs(DATA_FOLDER, exist_ok=True)
 os.makedirs(MD_FOLDER, exist_ok=True)
 
 REQUIRED_COLS = ["id","subject","stem","A","B","C","D","E","correct","explanation"]
 
-# ============================= SVG rendering + Scoped styling =============================
+# ============================= Markdown rendering helpers =============================
 SVG_BLOCK_RE = re.compile(r"(<svg[\s\S]*?</svg>)", re.IGNORECASE)
-
 EXPLAIN_SCOPE_CSS = """
 <style>
 .explain-scope { font-family: 'Segoe UI', Arial, sans-serif; font-size: 1.02rem; line-height: 1.55; color:#222; }
-.explain-scope h3 { margin:.4rem 0 .25rem 0; font-weight:700; }
 .explain-scope table { border-collapse:collapse; width:100%; margin:.4rem 0; border:2px solid #444; }
 .explain-scope th, td { border:1px solid #d1d5db; padding:.45rem .5rem; text-align:center; }
 .explain-scope thead th { background:#1d4ed8; color:white; border-color:#1d4ed8; }
 .explain-scope tr:nth-child(even) { background:#f9fafb; }
 </style>
 """
-
 def render_explanation_block(explain_text: str):
-    """Render explanation safely, with scoped CSS and proper SVG handling."""
     if not explain_text or not str(explain_text).strip():
         return
     st.markdown("<div class='explain-scope'>", unsafe_allow_html=True)
@@ -105,7 +85,7 @@ def render_explanation_block(explain_text: str):
             st.markdown(chunk, unsafe_allow_html=False)
     st.markdown("</div>", unsafe_allow_html=True)
 
-# ============================= Markdown loaders =============================
+# ============================= Question loaders =============================
 FRONTMATTER_RE = re.compile(r"^---\s*([\s\S]*?)\s*---\s*([\s\S]*)$", re.MULTILINE)
 EXPL_SPLIT_RE  = re.compile(r"<!--\s*EXPLANATION\s*-->", re.IGNORECASE)
 
@@ -170,6 +150,17 @@ def _read_all_markdown(folder: str) -> Tuple[pd.DataFrame, int]:
     df = df.drop_duplicates(subset=["id"], keep="first").reset_index(drop=True)
     return df, skipped
 
+def _read_csv_strict(path: str) -> pd.DataFrame:
+    df = pd.read_csv(path)
+    missing = [c for c in REQUIRED_COLS if c not in df.columns]
+    if missing:
+        raise ValueError(f"{os.path.basename(path)} missing cols: {missing}")
+    df = df[REQUIRED_COLS].copy()
+    for c in REQUIRED_COLS:
+        df[c] = df[c].astype(str).str.strip()
+    df["correct"] = df["correct"].str.upper()
+    return df
+
 def discover_subjects_from_markdown(folder: str) -> Dict[str, Set[str]]:
     files = sorted(glob.glob(os.path.join(folder, "*.md")))
     subj_to_files: Dict[str, Set[str]] = {}
@@ -184,18 +175,6 @@ def discover_subjects_from_markdown(folder: str) -> Dict[str, Set[str]]:
         except Exception:
             continue
     return subj_to_files
-
-# ============================= (Optional) CSV support =============================
-def _read_csv_strict(path: str) -> pd.DataFrame:
-    df = pd.read_csv(path)
-    missing = [c for c in REQUIRED_COLS if c not in df.columns]
-    if missing:
-        raise ValueError(f"{os.path.basename(path)} missing cols: {missing}")
-    df = df[REQUIRED_COLS].copy()
-    for c in REQUIRED_COLS:
-        df[c] = df[c].astype(str).str.strip()
-    df["correct"] = df["correct"].str.upper()
-    return df
 
 def discover_subjects_from_csvs(folder: str) -> Dict[str, Set[str]]:
     files = glob.glob(os.path.join(folder, "*.csv"))
@@ -212,7 +191,6 @@ def discover_subjects_from_csvs(folder: str) -> Dict[str, Set[str]]:
 # ============================= Subject map (MD + CSV) =============================
 MD_SUBJECTS  = discover_subjects_from_markdown(MD_FOLDER)
 CSV_SUBJECTS = discover_subjects_from_csvs(DATA_FOLDER)
-
 SUBJECT_TO_FILES: Dict[str, Set[str]] = {}
 for subj, paths in MD_SUBJECTS.items():
     SUBJECT_TO_FILES.setdefault(subj, set()).update(paths)
@@ -258,44 +236,56 @@ def load_questions_for_subjects(selected_subjects: List[str], random_all: bool) 
     out = pd.concat(frames, ignore_index=True)
     return out.drop_duplicates(subset=["id"], keep="first").reset_index(drop=True)
 
-# ============================= Tracker Topics (your list) =============================
+# ============================= Topic Tracker (ordered) =============================
+# Order: Foundations → Neonatal → Congenital GI/Abd wall → Thoracic/Airway → Esophagus/Lung → Hepatobiliary → Colorectal → Uro/Endo/Thyroid → Vascular/Skin/Lymph → Oncology → Trauma/Critical Care → Transplant
 TOPIC_TRACKER = [
-    "Bronchoscopy","Chest Wall Deformities: Pectus Excavatum/Carinatum/Marfan’s/and/Poland’s Syndromes","Chylothorax",
-    "Congenital Diaphragmatic Hernia","Cystic Diseases of the Lung","Cystic Fibrosis","Cystic Pulmonary Airway Malformation",
-    "Empyema","Esophageal Atresia/and/Tracheoesophageal Fistula","Esophageal Perforation","Esophageal Replacement",
-    "Esophageal Stenosis/Webs/Diverticuli","Esophageal Stricture: Caustic Ingestion/and/Other Causes","Esophagoscopy",
-    "Eventration of the Diaphragm","Gastroesophageal Reflux/Barrett’s Esophagus","Laryngomalacia","Lobar Emphysema",
-    "Mediastinal Cysts/Masses","Patent Ductus Arteriosus","Pneumothorax","Prenatal Anomalies/and/Therapy","Pulmonary Abscess",
-    "Pulmonary Hypoplasia/Hypertension","Pulmonary Sequestration","Subacute Bacterial Endocarditis Prophylaxis",
-    "Tracheobronchial Foreign Bodies","Tracheomalacia","Vascular Ring/and/Pulmonary Artery Sling","Abdominal Pain",
-    "Alimentary Tract Duplications","Appendicitis","Ascites: Chylous","Biliary Atresia","Choledochal Cysts",
-    "Cloacal Exstrophy/Bladder Exstrophy","Duodenal Atresia/Stenosis/Webs/Annular Pancreas","Gallbladder Disease/Gallstones",
-    "Gastric Volvulus","Gastrointestinal Bleeding","Gastroschisis","Hepatic Infections: Hepatitis/Abscess/Cysts",
-    "Hirschsprung Disease","Hypertrophic Pyloric Stenosis","Inflammatory Bowel Disease","Inguinal Hernia","Intestinal Atresia",
-    "Intussusception","Malrotation","Meconium Ileus/Peritonitis/Plug","Mesenteric/and/Omental Cysts","Necrotizing Enterocolitis",
-    "Neonatal Gastric Perforation","Neonatal Obstruction","Omphalocele","Omphalomesenteric Duct Remnants/Urachus/and/Meckel’s",
-    "Peptic Ulcer Disease","Polyps","Portal Hypertension","Umbilical Hernia/and/Other Umbilical Disorders",
-    "Adrenal Cortical Tumors/Pheochromocytoma","Anal Pathology: Fissures/Abscesses/Fistulae/Pilonidal/Prolapse","Anorectal Malformation",
-    "Arterial Diseases/and/Vasculitis","Branchial Cleft/Arch Anomalies","Breast Disorders",
-    "Circumcision/and/Abnormalities of the Urethra/Penis/Scrotum","Disorders of Sexual Development","Endocrine Diseases",
-    "Lymphadenopathy/Atypical Mycobacteria","Neurological: Shunt Complications/Dermal Sinuses","Ovarian Torsion/Cysts/and/Tumors",
-    "Renal Diseases: Nephrotic Syndrome/DI/Renal Vein Thrombosis/Chronic Failure/Prune Belly Syndrome",
-    "Thyroglossal Duct Cyst/Sinus","Thyroid Nodules","Torsions: Appendix Testes/Testicular","Torticollis",
-    "Undescended Testicle (Cryptorchidism)","Vaginal Atresia/Hydrometrocolpos","Vascular Anomalies","Abdominal Trauma",
-    "Acute Renal Failure","ARDS","Burns: Resuscitation/Airway/Electrical/Nutrition/Wound/Sepsis",
-    "Cardiovascular Trauma: Tamponade/Contusion/Arch Disruption/Peripheral Vascular Injuries","Coagulation","Extracorporeal Life Support",
-    "Fluids/and/Electrolytes","Hematologic Diseases: Spherocytosis/Sickle Cell/ITP/HSP",
-    "Lung Physiology/Pathophysiology/Ventilators/Pneumonia","Musculoskeletal Trauma: Pelvis/Long Bone",
-    "Neonatal Physiology/and/Pathophysiology: Transition from Fetal Circulation/Cardiovascular Monitoring/Shock","Neurosurgical Trauma",
-    "Nonaccidental Injuries: Diagnosis/Evaluation/Legal Issues","Nutrition","Obesity","Pediatric Anesthesia/and/Pain Management",
-    "Short Bowel Syndrome/Intestinal Failure","Soft Tissue Trauma: Tetanus/Bites/Wound Infection/Crush Injuries","Thoracic Trauma",
-    "Transplantation","Trauma: Initial Assessment/and/Resuscitation","Abdominal Mass/in/the/Newborn","Adrenal Cancer",
-    "Benign Liver Tumors: Hepatic Mesenchymal Hamartoma/Adenoma/FNH","Bone Tumors: Osteogenic Sarcoma/Ewing Sarcoma",
-    "Chemo/Radiation Therapy/Immunotherapy Concepts/Genetics","Dermoid/Epidermoid Cysts/Soft Tissue Nodules",
-    "Gastrointestinal Tumors","Lung/and/Chest Wall Tumors","Lymphoma/Leukemia",
-    "Malignant Liver Tumors: Hepatoblastoma/Hepatocellular Carcinoma","Mesoblastic Nephroma","Neuroblastoma","Nevi/Melanoma",
-    "Ovarian/and/Adnexal Problems","Rhabdomyosarcoma","Splenic Diseases","Teratoma","Testicular Tumors",
-    "Wilms Tumor/Renal Cell Carcinoma/and/Hemihypertrophy"
+    # Foundations / Physiology
+    "Fluids/and/Electrolytes","Nutrition","Pediatric Anesthesia/and/Pain Management",
+    "Neonatal Physiology/and/Pathophysiology: Transition from Fetal Circulation/Cardiovascular Monitoring/Shock",
+    "Lung Physiology/Pathophysiology/Ventilators/Pneumonia","ARDS","Coagulation",
+    # Neonatal congenital abdomen
+    "Neonatal Obstruction","Duodenal Atresia/Stenosis/Webs/Annular Pancreas","Intestinal Atresia","Malrotation",
+    "Meconium Ileus/Peritonitis/Plug","Necrotizing Enterocolitis",
+    # Abdominal wall
+    "Gastroschisis","Omphalocele","Umbilical Hernia/and/Other Umbilical Disorders",
+    # Esophagus & foregut
+    "Esophageal Atresia/and/Tracheoesophageal Fistula","Esophageal Stenosis/Webs/Diverticuli",
+    "Esophageal Stricture: Caustic Ingestion/and/Other Causes","Esophageal Perforation","Esophageal Replacement","Esophagoscopy",
+    "Gastroesophageal Reflux/Barrett’s Esophagus","Gastric Volvulus","Peptic Ulcer Disease",
+    # Airway & thoracic congenital
+    "Congenital Diaphragmatic Hernia","Eventration of the Diaphragm","Lobar Emphysema","Cystic Pulmonary Airway Malformation",
+    "Pulmonary Sequestration","Cystic Diseases of the Lung","Chylothorax","Empyema","Pneumothorax","Pulmonary Abscess",
+    "Pulmonary Hypoplasia/Hypertension","Vascular Ring/and/Pulmonary Artery Sling","Tracheomalacia",
+    # Airway foreign bodies / bronchoscopy
+    "Tracheobronchial Foreign Bodies","Bronchoscopy","Laryngomalacia",
+    # Hepatobiliary / portal
+    "Biliary Atresia","Choledochal Cysts","Gallbladder Disease/Gallstones",
+    "Hepatic Infections: Hepatitis/Abscess/Cysts","Portal Hypertension",
+    # Small bowel / colorectal
+    "Hirschsprung Disease","Inflammatory Bowel Disease","Short Bowel Syndrome/Intestinal Failure","Gastrointestinal Bleeding","Polyps",
+    "Alimentary Tract Duplications","Mesenteric/and/Omental Cysts","Ascites: Chylous","Omphalomesenteric Duct Remnants/Urachus/and/Meckel’s",
+    "Abdominal Pain","Neonatal Gastric Perforation",
+    # Pediatric urology / endocrine / thyroid
+    "Inguinal Hernia","Undescended Testicle (Cryptorchidism)","Torsions: Appendix Testes/Testicular",
+    "Circumcision/and/Abnormalities of the Urethra/Penis/Scrotum","Disorders of Sexual Development","Ovarian Torsion/Cysts/and/Tumors",
+    "Ovarian/and/Adnexal Problems","Renal Diseases: Nephrotic Syndrome/DI/Renal Vein Thrombosis/Chronic Failure/Prune Belly Syndrome",
+    "Endocrine Diseases","Thyroid Nodules","Thyroglossal Duct Cyst/Sinus","Vaginal Atresia/Hydrometrocolpos",
+    # Head & neck / vascular / skin / lymph
+    "Branchial Cleft/Arch Anomalies","Breast Disorders","Torticollis","Lymphadenopathy/Atypical Mycobacteria",
+    "Vascular Anomalies","Dermoid/Epidermoid Cysts/Soft Tissue Nodules","Subacute Bacterial Endocarditis Prophylaxis","Patent Ductus Arteriosus",
+    "Prenatal Anomalies/and/Therapy","Mediastinal Cysts/Masses",
+    # Oncology
+    "Abdominal Mass/in/the/Newborn","Benign Liver Tumors: Hepatic Mesenchymal Hamartoma/Adenoma/FNH",
+    "Malignant Liver Tumors: Hepatoblastoma/Hepatocellular Carcinoma","Lung/and/Chest Wall Tumors",
+    "Gastrointestinal Tumors","Bone Tumors: Osteogenic Sarcoma/Ewing Sarcoma","Rhabdomyosarcoma","Neuroblastoma",
+    "Wilms Tumor/Renal Cell Carcinoma/and/Hemihypertrophy","Mesoblastic Nephroma","Testicular Tumors","Lymphoma/Leukemia",
+    "Nevi/Melanoma","Adrenal Cancer","Chemo/Radiation Therapy/Immunotherapy Concepts/Genetics","Splenic Diseases","Teratoma",
+    # Trauma / Critical care
+    "Trauma: Initial Assessment/and/Resuscitation","Thoracic Trauma","Abdominal Trauma","Musculoskeletal Trauma: Pelvis/Long Bone",
+    "Cardiovascular Trauma: Tamponade/Contusion/Arch Disruption/Peripheral Vascular Injuries","Nonaccidental Injuries: Diagnosis/Evaluation/Legal Issues",
+    "Burns: Resuscitation/Airway/Electrical/Nutrition/Wound/Sepsis","Extracorporeal Life Support","Acute Renal Failure","Neurosurgical Trauma",
+    # Transplant
+    "Transplantation"
 ]
 
 def _slug(s: str) -> str:
@@ -307,7 +297,6 @@ def _load_progress() -> Dict[str, bool]:
         try:
             with open(PROGRESS_PATH, "r", encoding="utf-8") as f:
                 data = json.load(f)
-            # Ensure all topics exist (new ones default to False)
             for t in TOPIC_TRACKER:
                 data.setdefault(t, False)
             return data
@@ -322,9 +311,11 @@ def _save_progress(d: Dict[str, bool]):
     except Exception:
         pass
 
-# Single source of truth in session
 if "tracker_progress" not in st.session_state:
     st.session_state.tracker_progress = _load_progress()
+
+if "mode" not in st.session_state:
+    st.session_state.mode = "quiz"  # or "topics"
 
 # ============================= Quiz state & UI =============================
 def init_session_state(n:int):
@@ -337,7 +328,7 @@ def render_header(n:int, title_text:str):
     pos = st.session_state.current
     pct = int(((pos + 1) / max(n,1)) * 100)
     st.markdown("<div class='sticky-top'>", unsafe_allow_html=True)
-    st.markdown("<div style='height:2px'></div>", unsafe_allow_html=True)  # anti-clipping spacer
+    st.markdown("<div style='height:2px'></div>", unsafe_allow_html=True)
     left, right = st.columns([6,6])
     with left:
         st.markdown(f"<div class='top-title'>{title_text}</div>", unsafe_allow_html=True)
@@ -355,7 +346,6 @@ def render_question(pool: pd.DataFrame):
     i = st.session_state.current
     row = pool.iloc[i]
     st.markdown(f"<div class='q-prompt'>{row['stem']}</div>", unsafe_allow_html=True)
-
     letters = ["A","B","C","D","E"]
     selected = st.radio(
         label="", options=letters,
@@ -364,7 +354,6 @@ def render_question(pool: pd.DataFrame):
         label_visibility="collapsed", key=f"radio_{i}"
     )
     st.session_state.answers[i] = selected
-
     cols = st.columns([1,6])
     with cols[0]:
         if st.button("Reveal", key=f"reveal_{i}"):
@@ -375,7 +364,6 @@ def render_question(pool: pd.DataFrame):
             verdict_html = ("<span class='verdict verdict-ok'>Correct</span>" if selected == correct
                             else "<span class='verdict verdict-err'>Incorrect</span>")
             st.markdown(verdict_html, unsafe_allow_html=True)
-
     if st.session_state.revealed[i] and str(row["explanation"]).strip():
         st.markdown("<div class='explain-plain'>", unsafe_allow_html=True)
         render_explanation_block(str(row["explanation"]))
@@ -427,82 +415,77 @@ with st.sidebar:
             st.session_state.random_all = random_all
             st.session_state.selected_subjects = pick_subjects
 
-# ============================= Main (quiz area) =============================
-pool = st.session_state.get("pool")
-if pool is None:
-    st.write("Use the sidebar to start a quiz.")
-    # Continue rendering tracker even without a quiz
-else:
-    title_text = "Random Mix" if st.session_state.get("random_all") else ", ".join(st.session_state.get("selected_subjects", [])) or "PSITE"
-    render_header(len(pool), title_text)
-    if st.session_state.finished:
-        render_results(pool)
-    else:
-        render_question(pool)
+    st.markdown("---")
+    if st.button("👀 See all topics"):
+        st.session_state.mode = "topics"
 
-# ============================= Tracker (bottom ladder) =============================
-def render_topic_tracker():
+# ============================= Topics Page =============================
+def render_topics_page():
     prog: Dict[str, bool] = st.session_state.tracker_progress
+    st.subheader("All Topics")
+    # Quick stats
+    completed = sum(bool(prog.get(t, False)) for t in TOPIC_TRACKER)
+    st.caption(f"Completed: {completed}/{len(TOPIC_TRACKER)} ({int(100*completed/len(TOPIC_TRACKER))}%)")
 
-    # Controls (shown above the chips/table)
-    with st.container():
-        cc1, cc2, cc3, cc4 = st.columns([2,1,1,1])
-        with cc1:
-            query = st.text_input("Search topics", "", placeholder="filter…")
-        with cc2:
-            only_incomplete = st.toggle("Show only incomplete", value=False)
-        with cc3:
-            view_mode = st.selectbox("View", ["Chips", "Table"], index=0)
-        with cc4:
-            if st.button("Save progress"):
-                _save_progress(prog)
-                st.success("Progress saved.", icon="✅")
+    # Search + filter
+    cols = st.columns([2,1,1,1])
+    with cols[0]:
+        query = st.text_input("Search", "", placeholder="filter…")
+    with cols[1]:
+        only_incomplete = st.toggle("Only incomplete", value=False)
+    with cols[2]:
+        if st.button("Mark ALL visible done"):
+            pass  # handled after filtering
+    with cols[3]:
+        if st.button("Mark ALL visible undone"):
+            pass  # handled after filtering
 
-    # Apply filter
     filtered = [t for t in TOPIC_TRACKER if (query.lower() in t.lower())]
     if only_incomplete:
         filtered = [t for t in filtered if not prog.get(t, False)]
 
-    # Bulk actions
-    b1, b2 = st.columns(2)
-    with b1:
-        if st.button("Mark ALL done"):
-            for t in filtered:
-                prog[t] = True
-    with b2:
-        if st.button("Mark ALL undone"):
-            for t in filtered:
-                prog[t] = False
+    # Apply bulk buttons after we know `filtered`
+    if cols[2].button("✔️ Confirm done for visible"):
+        for t in filtered:
+            prog[t] = True
+    if cols[3].button("↩️ Confirm undone for visible"):
+        for t in filtered:
+            prog[t] = False
 
-    # Chips mode (compact grid of checkboxes)
-    if view_mode == "Chips":
-        # Render chips in a grid
-        # We'll make small columns to keep layout responsive
-        cols = st.columns(4)
-        for idx, topic in enumerate(filtered):
-            with cols[idx % 4]:
-                key = f"chk_{_slug(topic)}"
-                checked = st.checkbox(topic, value=prog.get(topic, False), key=key)
-                prog[topic] = checked
+    # Chips (3 columns)
+    st.write("")  # tiny spacer
+    # render as three columns evenly
+    chip_cols = st.columns(3)
+    for idx, topic in enumerate(filtered):
+        with chip_cols[idx % 3]:
+            key = f"chk_{_slug(topic)}"
+            checked = st.checkbox(topic, value=prog.get(topic, False), key=key)
+            prog[topic] = checked
+            # Optional subtle visual cue per-chip
+            st.markdown(f"<div class='chip{' done' if checked else ''}'></div>", unsafe_allow_html=True)
 
-    # Table mode (editable table)
+    # Save controls
+    save_col1, save_col2 = st.columns([1,4])
+    with save_col1:
+        if st.button("Save progress"):
+            _save_progress(prog)
+            st.success("Progress saved.", icon="✅")
+    with save_col2:
+        if st.button("Back to quiz"):
+            _save_progress(prog)
+            st.session_state.mode = "quiz"
+
+# ============================= Main =============================
+if st.session_state.mode == "topics":
+    render_topics_page()
+else:
+    pool = st.session_state.get("pool")
+    if pool is None:
+        st.write("Use the sidebar to start a quiz.")
     else:
-        df = pd.DataFrame({
-            "Topic": filtered,
-            "Completed": [bool(prog.get(t, False)) for t in filtered]
-        })
-        edited = st.data_editor(
-            df, use_container_width=True, hide_index=True,
-            column_config={"Completed": st.column_config.CheckboxColumn("Completed")}
-        )
-        # sync back
-        for _, row in edited.iterrows():
-            prog[row["Topic"]] = bool(row["Completed"])
-
-    # Auto-save silently after interactions
-    _save_progress(prog)
-
-# Render fixed footer container with widgets above (widgets can't live inside raw HTML)
-st.markdown("<div class='tracker-wrap'><div class='tracker-inner'><div class='tracker-title'>Topic Tracker</div></div></div>", unsafe_allow_html=True)
-with st.container():
-    render_topic_tracker()
+        title_text = "Random Mix" if st.session_state.get("random_all") else ", ".join(st.session_state.get("selected_subjects", [])) or "PSITE"
+        render_header(len(pool), title_text)
+        if st.session_state.finished:
+            render_results(pool)
+        else:
+            render_question(pool)
