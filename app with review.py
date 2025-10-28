@@ -2,7 +2,7 @@ import os
 import glob
 import json
 import re
-from typing import List, Dict, Set, Tuple
+from typing import List, Dict, Set, Tuple, Optional
 import pandas as pd
 import streamlit as st
 import streamlit.components.v1 as components
@@ -14,53 +14,69 @@ st.markdown("""
 <style>
 :root { --card-bg:#ffffff; --card-border:#e6e8ec; --accent:#1d4ed8; --muted:#6b7280; }
 html, body { height:auto!important; overflow-y:auto!important; }
-.block-container { padding-top:1.1rem!important; padding-bottom:0.8rem!important; }
+.block-container { padding-top:1.1rem!important; padding-bottom:0.9rem!important; }
 
+/* Sticky quiz header */
 .sticky-top { position: sticky; top: 0; z-index: 1000; background: #fff; border-bottom: 1px solid #eef0f3;
   padding: 0.85rem 0.6rem 0.6rem; overflow: visible; box-sizing: border-box; }
 .top-title { font-weight:600; font-size:1.06rem; margin:0 0 .3rem 0; }
 .q-progress { height:6px; background:#eef0f3; border-radius:999px; overflow:hidden; margin:0 0 6px 0; }
 .q-progress>div { height:100%; background:var(--accent); width:0%; transition:width .25s ease; }
 
-.sticky-top .stButton>button { padding: 0.48rem 0.9rem !important; line-height: 1.2 !important;
-  min-height: 38px !important; border-radius: 8px !important; }
+/* Buttons */
+.stButton>button { border-radius: 8px !important; }
 
+/* Question prompt */
 .q-prompt { border:1px solid var(--card-border); background:#fafbfc; border-radius:10px; padding:12px; margin-bottom:6px; }
 
-div[role="radiogroup"] { gap:0!important; }
-div[role="radiogroup"]>label { border:none!important; background:transparent!important; padding:8px 4px!important;
-  margin:2px 0!important; border-radius:6px; }
+/* Radio options (simple) */
+div[role="radiogroup"]>label { padding:8px 4px!important; margin:2px 0!important; border-radius:6px; }
 div[role="radiogroup"]>label:hover { background:#f5f7fb!important; }
 
+/* Verdict chips */
 .verdict { font-weight:600; padding:.22rem .6rem; border-radius:999px; border:1px solid transparent; display:inline-flex; align-items:center; }
 .verdict-ok  { background:#10b9811a; color:#065f46; border-color:#34d399; }
 .verdict-err { background:#ef44441a; color:#7f1d1d; border-color:#fca5a5; }
 
-.explain-plain { padding-top:8px; background:transparent!important; border:none!important; box-shadow:none!important; }
+/* Scoped explanation */
+.explain-plain { padding-top:8px; }
 
-/* Topic chips (3 columns, professional) */
-.chips-grid { display:grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap:8px; }
-.chip { border:1px solid #e5e7eb; border-radius: 10px; padding: 8px 10px; display:flex; gap:10px; align-items:center; background:#fff; }
-.chip.done { background: #10b98114; border-color:#10b98166; }
+/* ================= Topics UI ================ */
+.nav-tabs { display:flex; gap:10px; border-bottom:1px solid #eef0f3; margin-bottom:12px; }
+.tab { padding:8px 12px; border:1px solid #e5e7eb; border-bottom:none; border-radius:8px 8px 0 0; background:#f9fafb; font-weight:600; }
+.tab.active { background:#fff; border-color:#d1d5db; }
 
-/* Spacer to avoid clipping under sticky header when topics shown first */
-.top-spacer { height: 10px; }
+.topic-grid { display:grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap:12px; }
+.topic-card { border:1px solid #e5e7eb; border-radius:12px; background:#fff; padding:10px; display:flex; flex-direction:column; gap:8px; }
+.topic-title { font-weight:600; line-height:1.25; font-size:.98rem; }
+.topic-actions { display:flex; gap:8px; flex-wrap:wrap; }
+.badge-done { display:inline-block; font-size:.78rem; padding:2px 8px; border:1px solid #10b98166; border-radius:999px; background:#10b98114; color:#065f46; }
+
+/* Review page */
+.review-header { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:6px; }
+.review-title { font-weight:700; font-size:1.25rem; }
+.review-meta { color:#6b7280; font-size:.9rem; }
+
+/* Avoid H2 clipping when topics page shows first */
+.top-spacer { height: 8px; }
 </style>
 """, unsafe_allow_html=True)
 
 # ============================= Paths =============================
-BASE_DIR     = os.path.dirname(os.path.abspath(__file__))
-DATA_FOLDER  = os.getenv("QBANK_DATA_DIR", os.path.join(BASE_DIR, "data"))
-MD_FOLDER    = os.getenv("QBANK_MD_DIR", os.path.join(DATA_FOLDER, "questions"))
-PROGRESS_PATH= os.path.join(DATA_FOLDER, "tracker_progress.json")
+BASE_DIR      = os.path.dirname(os.path.abspath(__file__))
+DATA_FOLDER   = os.getenv("QBANK_DATA_DIR", os.path.join(BASE_DIR, "data"))
+MD_FOLDER     = os.getenv("QBANK_MD_DIR", os.path.join(DATA_FOLDER, "questions"))
+REVIEWS_FOLDER= os.path.join(DATA_FOLDER, "reviews")
+PROGRESS_PATH = os.path.join(DATA_FOLDER, "tracker_progress.json")
 
 os.makedirs(DATA_FOLDER, exist_ok=True)
 os.makedirs(MD_FOLDER, exist_ok=True)
+os.makedirs(REVIEWS_FOLDER, exist_ok=True)
 
 REQUIRED_COLS = ["id","subject","stem","A","B","C","D","E","correct","explanation"]
 
 # ============================= Markdown rendering helpers =============================
-SVG_BLOCK_RE = re.compile(r"(<svg[\s\S]*?</svg>)", re.IGNORECASE)
+SVG_BLOCK_RE = re.compile(r"(<svg[\\s\\S]*?</svg>)", re.IGNORECASE)
 EXPLAIN_SCOPE_CSS = """
 <style>
 .explain-scope { font-family: 'Segoe UI', Arial, sans-serif; font-size: 1.02rem; line-height: 1.55; color:#222; }
@@ -70,6 +86,7 @@ EXPLAIN_SCOPE_CSS = """
 .explain-scope tr:nth-child(even) { background:#f9fafb; }
 </style>
 """
+
 def render_explanation_block(explain_text: str):
     if not explain_text or not str(explain_text).strip():
         return
@@ -80,7 +97,7 @@ def render_explanation_block(explain_text: str):
         if not chunk or not chunk.strip():
             continue
         if chunk.lstrip().lower().startswith("<svg"):
-            m = re.search(r'height="(\d+)"', chunk, re.IGNORECASE)
+            m = re.search(r'height="(\\d+)"', chunk, re.IGNORECASE)
             height = int(m.group(1)) if m else 320
             components.html(chunk, height=height + 20, scrolling=False)
         else:
@@ -88,8 +105,8 @@ def render_explanation_block(explain_text: str):
     st.markdown("</div>", unsafe_allow_html=True)
 
 # ============================= Question loaders =============================
-FRONTMATTER_RE = re.compile(r"^---\s*([\s\S]*?)\s*---\s*([\s\S]*)$", re.MULTILINE)
-EXPL_SPLIT_RE  = re.compile(r"<!--\s*EXPLANATION\s*-->", re.IGNORECASE)
+FRONTMATTER_RE = re.compile(r"^---\\s*([\\s\\S]*?)\\s*---\\s*([\\s\\S]*)$", re.MULTILINE)
+EXPL_SPLIT_RE  = re.compile(r"<!--\\s*EXPLANATION\\s*-->", re.IGNORECASE)
 
 def _parse_front_matter(text: str):
     m = FRONTMATTER_RE.match(text)
@@ -238,7 +255,7 @@ def load_questions_for_subjects(selected_subjects: List[str], random_all: bool) 
     out = pd.concat(frames, ignore_index=True)
     return out.drop_duplicates(subset=["id"], keep="first").reset_index(drop=True)
 
-# ============================= Topic Tracker (ordered) =============================
+# ============================= Topics list (ordered) =============================
 TOPIC_TRACKER = [
     # Foundations / Physiology
     "Fluids/and/Electrolytes","Nutrition","Pediatric Anesthesia/and/Pain Management",
@@ -291,14 +308,15 @@ TOPIC_TRACKER = [
 
 def _slug(s: str) -> str:
     s2 = re.sub(r"[^A-Za-z0-9]+", "-", s).strip("-").lower()
-    return s2[:80]
+    return s2[:100]
 
+# ============================= Progress persistence =============================
 def _load_progress() -> Dict[str, bool]:
     if os.path.exists(PROGRESS_PATH):
         try:
             with open(PROGRESS_PATH, "r", encoding="utf-8") as f:
                 data = json.load(f)
-            for t in TOPIC_TRACKER:
+            for t in TOPIC_TRACKER:  # make sure new topics appear
                 data.setdefault(t, False)
             return data
         except Exception:
@@ -312,15 +330,76 @@ def _save_progress(d: Dict[str, bool]):
     except Exception:
         pass
 
-if "tracker_progress" not in st.session_state:
-    st.session_state.tracker_progress = _load_progress()
+if "progress" not in st.session_state:
+    st.session_state.progress = _load_progress()
 
-# Show topics (no separate mode; quiz can run simultaneously)
-if "show_topics" not in st.session_state:
-    st.session_state.show_topics = False
+# ============================= App mode / routing =============================
+if "mode" not in st.session_state:
+    st.session_state.mode = "topics"  # "topics" | "review" | "quiz"
+if "active_topic" not in st.session_state:
+    st.session_state.active_topic = None
+
+# ============================= Review loader =============================
+def _find_review_file_for_topic(topic: str) -> Optional[str]:
+    """
+    Strategy:
+    1) Exact match slug.md
+    2) Startswith slug*.md
+    3) Any .md whose frontmatter title or first H1/H2 contains topic words
+    """
+    slug = _slug(topic)
+    exact = os.path.join(REVIEWS_FOLDER, f"{slug}.md")
+    if os.path.exists(exact):
+        return exact
+    # startswith
+    candidates = sorted(glob.glob(os.path.join(REVIEWS_FOLDER, "*.md")))
+    for p in candidates:
+        base = os.path.splitext(os.path.basename(p))[0].lower()
+        if base.startswith(slug):
+            return p
+    # parse simple title
+    for p in candidates:
+        try:
+            with open(p, "r", encoding="utf-8") as f:
+                txt = f.read(4096)  # sample
+            m = re.search(r"^---\\s*([\\s\\S]*?)\\s*---", txt, re.MULTILINE)
+            title = None
+            if m:
+                for line in m.group(1).splitlines():
+                    if line.lower().startswith("title:"):
+                        title = line.split(":",1)[1].strip().strip('"').strip("'")
+                        break
+            if not title:
+                h = re.search(r"^\\s*#\\s+(.+)$", txt, re.MULTILINE)
+                if h:
+                    title = h.group(1).strip()
+            if title and topic.lower() in title.lower():
+                return p
+        except Exception:
+            continue
+    return None
+
+def render_review(topic: str):
+    st.markdown("<div class='top-spacer'></div>", unsafe_allow_html=True)
+    st.markdown("<div class='review-header'>"
+                f"<div class='review-title'>{topic}</div>"
+                f"<div class='review-meta'>Review</div>"
+                "</div>", unsafe_allow_html=True)
+    p = _find_review_file_for_topic(topic)
+    if not p:
+        st.info("No review uploaded yet for this topic. Place a Markdown file in `data/reviews/` (e.g., "
+                f"`{_slug(topic)}.md`).")
+        return
+    with open(p, "r", encoding="utf-8") as f:
+        txt = f.read()
+    # Render review (frontmatter allowed but not required)
+    # Remove frontmatter wrapper for clean display only
+    fm = FRONTMATTER_RE.match(txt)
+    body = txt if not fm else fm.group(2).strip()
+    st.markdown(body, unsafe_allow_html=True)
 
 # ============================= Quiz state & UI =============================
-def init_session_state(n:int):
+def init_quiz_state(n:int):
     st.session_state.answers  = [None]*n
     st.session_state.revealed = [False]*n
     st.session_state.current  = 0
@@ -380,106 +459,158 @@ def render_results(pool: pd.DataFrame):
     st.markdown("## Results")
     st.metric("Score", f"{int(100*score/max(n,1))}%")
     if st.button("Restart"):
-        init_session_state(len(pool))
+        init_quiz_state(len(pool))
 
-# ============================= Sidebar =============================
+# ============================= Sidebar (always available) =============================
 with st.sidebar:
-    st.header("Build Quiz")
+    # Tabs for navigation
+    tabs = st.segmented_control("Navigation", options=["Topics","Review","Quick Maker"], default=(
+        "Review" if st.session_state.mode=="review" else ("Quick Maker" if st.session_state.mode=="quiz" else "Topics")
+    ))
+    st.session_state.mode = "topics" if tabs=="Topics" else ("review" if tabs=="Review" else "quiz")
 
+    st.markdown("---")
+    st.subheader("Quick Maker")
+
+    # Subject discovery from files
     SUBJECT_OPTIONS = sorted(SUBJECT_TO_FILES.keys(), key=lambda s: s.lower())
-    if not SUBJECT_OPTIONS:
-        st.error(f"No subjects found. Put .md files in `{MD_FOLDER}` with proper YAML front-matter, then reload.")
-        st.stop()
+    random_all = st.toggle("Random from all subjects", value=False)
+    pick_subjects = st.multiselect("Subjects", SUBJECT_OPTIONS, disabled=random_all)
 
-    st.session_state.show_topics = st.toggle("Show all topics", value=st.session_state.show_topics)
-
-    random_all = st.toggle("Random from all topics", value=False)
-    pick_subjects = st.multiselect("Subject", SUBJECT_OPTIONS, disabled=random_all)
-
-    df = load_questions_for_subjects(pick_subjects, random_all=random_all)
-    total = len(df)
+    # Build dataset
+    df_quiz = load_questions_for_subjects(pick_subjects, random_all=random_all)
+    total = len(df_quiz)
     min_q = 1 if total >= 1 else 0
     max_q = total if total >= 1 else 1
     default_q = min(20, max_q) if max_q >= 1 else 1
     step_q = 1 if max_q < 10 else 5
-
-    n_questions = st.number_input("Number of Questions",
-                                  min_value=min_q, max_value=max_q,
+    n_questions = st.number_input("Number of Questions", min_value=min_q, max_value=max_q,
                                   step=step_q, value=default_q)
 
-    if st.button("Start ▶"):
-        if df.empty:
+    if st.button("Start Quiz"):
+        if df_quiz.empty:
             st.warning("No questions available for the current selection.")
         else:
-            pool = (df.sample(n=int(n_questions), random_state=42).reset_index(drop=True)
-                    if len(df) > n_questions
-                    else df.sample(frac=1.0, random_state=42).reset_index(drop=True))
+            pool = (df_quiz.sample(n=int(n_questions), random_state=42).reset_index(drop=True)
+                    if len(df_quiz) > n_questions
+                    else df_quiz.sample(frac=1.0, random_state=42).reset_index(drop=True))
             st.session_state.pool = pool
-            init_session_state(len(pool))
-            st.session_state.random_all = random_all
-            st.session_state.selected_subjects = pick_subjects
+            init_quiz_state(len(pool))
+            st.session_state.mode = "quiz"
 
-# ============================= Topics (chips-only, 3 columns) =============================
-def _save_progress(d: Dict[str, bool]):
-    try:
-        with open(PROGRESS_PATH, "w", encoding="utf-8") as f:
-            json.dump(d, f, ensure_ascii=False, indent=2)
-    except Exception:
-        pass
+# ============================= Topics Page =============================
+def render_topics_page():
+    prog: Dict[str, bool] = st.session_state.progress
+    st.markdown("<div class='top-spacer'></div>", unsafe_allow_html=True)
 
-def render_topics_chips():
-    prog: Dict[str, bool] = st.session_state.tracker_progress
-    st.markdown("<div class='top-spacer'></div>", unsafe_allow_html=True)  # avoids H2 clipping
-    st.header("All Topics")
+    # Tabs look
+    st.markdown("<div class='nav-tabs'>"
+                "<div class='tab active'>Topics</div>"
+                "<div class='tab'>Review</div>"
+                "<div class='tab'>Quick Maker</div>"
+                "</div>", unsafe_allow_html=True)
+
+    st.subheader("All Topics")
     completed = sum(bool(prog.get(t, False)) for t in TOPIC_TRACKER)
     st.caption(f"Completed: {completed}/{len(TOPIC_TRACKER)} ({int(100*completed/len(TOPIC_TRACKER))}%)")
 
-    top_cols = st.columns([2, 1, 1])
+    top_cols = st.columns([2,1,1])
     with top_cols[0]:
-        query = st.text_input("Search", "", placeholder="filter…")
+        query = st.text_input("Search", "", placeholder="filter topics…")
     with top_cols[1]:
         only_incomplete = st.toggle("Only incomplete", value=False)
     with top_cols[2]:
-        pass
+        if st.button("Mark all visible done"):
+            pass  # executed after filtering
 
     filtered = [t for t in TOPIC_TRACKER if (query.lower() in t.lower())]
     if only_incomplete:
         filtered = [t for t in filtered if not prog.get(t, False)]
 
-    st.markdown("<div class='chips-grid'>", unsafe_allow_html=True)
-    # render 3 columns evenly using st.columns(3) so keyboard focus behaves nicely
+    # Apply the bulk action now that we know filtered
+    if top_cols[2].button("Confirm"):
+        for t in filtered:
+            prog[t] = True
+        _save_progress(prog)
+        st.rerun()
+
+    # Cards grid (3 columns)
+    st.markdown("<div class='topic-grid'>", unsafe_allow_html=True)
     cols = st.columns(3)
     for i, topic in enumerate(filtered):
         with cols[i % 3]:
-            key = f"chk_{_slug(topic)}"
-            checked = st.checkbox(topic, value=prog.get(topic, False), key=key)
-            prog[topic] = checked
+            with st.container(border=True):
+                st.markdown(f"<div class='topic-card'>", unsafe_allow_html=True)
+                st.markdown(f"<div class='topic-title'>{topic}</div>", unsafe_allow_html=True)
+
+                # Completed checkbox
+                key_chk = f"done_{_slug(topic)}"
+                checked = st.checkbox("Completed", value=prog.get(topic, False), key=key_chk)
+                prog[topic] = checked
+
+                # Actions
+                c1, c2 = st.columns(2)
+                with c1:
+                    if st.button("Open Review", key=f"open_{_slug(topic)}"):
+                        st.session_state.active_topic = topic
+                        st.session_state.mode = "review"
+                with c2:
+                    if st.button("Start Quiz", key=f"quiz_{_slug(topic)}"):
+                        # shortcut: auto-select this topic if it exists in subjects
+                        if topic in SUBJECT_TO_FILES:
+                            df = load_questions_for_subjects([topic], random_all=False)
+                        else:
+                            df = load_questions_for_subjects([], random_all=True)  # fallback
+                        if df.empty:
+                            st.warning("No questions found for this topic. Add .md questions to data/questions/.")
+                        else:
+                            st.session_state.pool = df.sample(frac=1.0, random_state=42).reset_index(drop=True)
+                            init_quiz_state(len(st.session_state.pool))
+                            st.session_state.mode = "quiz"
+
+                # Done badge
+                if prog.get(topic, False):
+                    st.markdown("<span class='badge-done'>Completed</span>", unsafe_allow_html=True)
+
+                st.markdown("</div>", unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
-    save_cols = st.columns([1,1,6])
-    with save_cols[0]:
-        if st.button("Save progress"):
-            _save_progress(prog)
-            st.success("Progress saved.", icon="✅")
-    with save_cols[1]:
-        if st.button("Mark all visible done"):
-            for t in filtered:
-                prog[t] = True
-            _save_progress(prog)
+    # Save button
+    if st.button("Save progress"):
+        _save_progress(prog)
+        st.success("Progress saved.")
 
-# ============================= Main =============================
-# If topics are visible, render them first; quiz can still run below.
-if st.session_state.show_topics:
-    render_topics_chips()
-    st.markdown("---")
+# ============================= Main Router =============================
+if st.session_state.mode == "topics":
+    render_topics_page()
 
-pool = st.session_state.get("pool")
-if pool is None:
-    st.write("Use the sidebar to start a quiz.")
-else:
-    title_text = "Random Mix" if st.session_state.get("random_all") else ", ".join(st.session_state.get("selected_subjects", [])) or "PSITE"
-    render_header(len(pool), title_text)
-    if st.session_state.finished:
-        render_results(pool)
+elif st.session_state.mode == "review":
+    if not st.session_state.active_topic:
+        st.info("Pick a topic from the Topics page to open its review.")
     else:
-        render_question(pool)
+        # Faux tabs for consistent look
+        st.markdown("<div class='nav-tabs'>"
+                    "<div class='tab'>Topics</div>"
+                    "<div class='tab active'>Review</div>"
+                    "<div class='tab'>Quick Maker</div>"
+                    "</div>", unsafe_allow_html=True)
+        render_review(st.session_state.active_topic)
+
+elif st.session_state.mode == "quiz":
+    st.markdown("<div class='nav-tabs'>"
+                "<div class='tab'>Topics</div>"
+                "<div class='tab'>Review</div>"
+                "<div class='tab active'>Quick Maker</div>"
+                "</div>", unsafe_allow_html=True)
+    pool = st.session_state.get("pool")
+    if pool is None or pool.empty:
+        st.write("Configure and start a quiz from the sidebar.")
+    else:
+        title_text = (st.session_state.active_topic or
+                      ("Random Mix" if st.session_state.get("random_all") else
+                       ", ".join(st.session_state.get("selected_subjects", [])) or "PSITE"))
+        render_header(len(pool), title_text)
+        if st.session_state.finished:
+            render_results(pool)
+        else:
+            render_question(pool)
